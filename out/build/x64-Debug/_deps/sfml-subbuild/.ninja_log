@@ -1,0 +1,21 @@
+# ninja log v5
+2	51	7409311250525187	sfml-populate-prefix/src/sfml-populate-stamp/sfml-populate-mkdir	5a6bcc1270d5c8b6
+2	51	7409311250525187	C:/Users/Sopha/Desktop/proj/out/build/x64-Debug/_deps/sfml-subbuild/sfml-populate-prefix/src/sfml-populate-stamp/sfml-populate-mkdir	5a6bcc1270d5c8b6
+3	39281	7409311728720753	sfml-populate-prefix/src/sfml-populate-stamp/sfml-populate-download	7db07a1d6905a216
+3	39281	7409311728720753	C:/Users/Sopha/Desktop/proj/out/build/x64-Debug/_deps/sfml-subbuild/sfml-populate-prefix/src/sfml-populate-stamp/sfml-populate-download	7db07a1d6905a216
+39282	41318	0	sfml-populate-prefix/src/sfml-populate-stamp/sfml-populate-update	d6a9c487d517225
+39282	41318	0	C:/Users/Sopha/Desktop/proj/out/build/x64-Debug/_deps/sfml-subbuild/sfml-populate-prefix/src/sfml-populate-stamp/sfml-populate-update	d6a9c487d517225
+41318	41366	7409311749572322	sfml-populate-prefix/src/sfml-populate-stamp/sfml-populate-patch	5e8fb4d8fdc07773
+41318	41366	7409311749572322	C:/Users/Sopha/Desktop/proj/out/build/x64-Debug/_deps/sfml-subbuild/sfml-populate-prefix/src/sfml-populate-stamp/sfml-populate-patch	5e8fb4d8fdc07773
+41366	41411	7409311750022412	sfml-populate-prefix/src/sfml-populate-stamp/sfml-populate-configure	d15503534a15a8be
+41366	41411	7409311750022412	C:/Users/Sopha/Desktop/proj/out/build/x64-Debug/_deps/sfml-subbuild/sfml-populate-prefix/src/sfml-populate-stamp/sfml-populate-configure	d15503534a15a8be
+41411	41464	7409311750552533	sfml-populate-prefix/src/sfml-populate-stamp/sfml-populate-build	3c389b8ff853062b
+41411	41464	7409311750552533	C:/Users/Sopha/Desktop/proj/out/build/x64-Debug/_deps/sfml-subbuild/sfml-populate-prefix/src/sfml-populate-stamp/sfml-populate-build	3c389b8ff853062b
+41464	41511	7409311751022639	sfml-populate-prefix/src/sfml-populate-stamp/sfml-populate-install	f660b639d24941a
+41464	41511	7409311751022639	C:/Users/Sopha/Desktop/proj/out/build/x64-Debug/_deps/sfml-subbuild/sfml-populate-prefix/src/sfml-populate-stamp/sfml-populate-install	f660b639d24941a
+41511	41560	7409311751512745	sfml-populate-prefix/src/sfml-populate-stamp/sfml-populate-test	d322cd0d467cbf1d
+41511	41560	7409311751512745	C:/Users/Sopha/Desktop/proj/out/build/x64-Debug/_deps/sfml-subbuild/sfml-populate-prefix/src/sfml-populate-stamp/sfml-populate-test	d322cd0d467cbf1d
+41560	41626	7409311752172908	CMakeFiles/sfml-populate-complete	2867310308d0c503
+41560	41626	7409311752172908	sfml-populate-prefix/src/sfml-populate-stamp/sfml-populate-done	2867310308d0c503
+41560	41626	7409311752172908	C:/Users/Sopha/Desktop/proj/out/build/x64-Debug/_deps/sfml-subbuild/CMakeFiles/sfml-populate-complete	2867310308d0c503
+41560	41626	7409311752172908	C:/Users/Sopha/Desktop/proj/out/build/x64-Debug/_deps/sfml-subbuild/sfml-populate-prefix/src/sfml-populate-stamp/sfml-populate-done	2867310308d0c503
