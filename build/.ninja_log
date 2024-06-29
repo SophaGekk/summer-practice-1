@@ -131,3 +131,12 @@
 42976	45329	7413649084944662	_deps/sfml-build/src/SFML/Audio/CMakeFiles/sfml-audio.dir/Listener.cpp.obj	74ca53ff681d74c2
 43162	46438	7413649094833063	_deps/sfml-build/src/SFML/Audio/CMakeFiles/sfml-audio.dir/Music.cpp.obj	4dea1701ea07a21b
 36	338	7413651001149875	GameMenu.exe	883b54240f31c67
+89	2639	7413655916638789	CMakeFiles/GameMenu.dir/gameMenu.cpp.obj	d7e2022e0b0fa557
+104	2774	7413655918029110	CMakeFiles/GameMenu.dir/Animator.cpp.obj	e1519fdf0a196cde
+95	2807	7413655918349186	CMakeFiles/GameMenu.dir/AssetManager.cpp.obj	9f32ddbd983a3d0f
+78	6957	7413655959821833	CMakeFiles/GameMenu.dir/main.cpp.obj	e5faf306fd2335dc
+143	7064	7413655960912429	CMakeFiles/GameMenu.dir/menuhearts.cpp.obj	6ec160a4efe444c9
+111	7727	7413655967544802	CMakeFiles/GameMenu.dir/menupik.cpp.obj	c7af5328e08afe5b
+128	7804	7413655968320838	CMakeFiles/GameMenu.dir/menudurak.cpp.obj	7526443990003cc6
+119	8089	7413655971201086	CMakeFiles/GameMenu.dir/pikdam.cpp.obj	cd2f8f6ce4ff405a
+8089	8470	7413655974830923	GameMenu.exe	883b54240f31c67

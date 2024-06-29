@@ -1,8 +1,8 @@
 #pragma once
 
 #include<Windows.h>
-#include <C:/Users/Sopha/Desktop/proj/resources/SFML-2.6.1/include/SFML/Graphics.hpp>
-#include<C:/Users/Sopha/Desktop/proj/resources/SFML-2.6.1/include/SFML/Audio.hpp>
+#include <SFML/Graphics.hpp>
+#include<SFML/Audio.hpp>
 #include <iostream>
 #include <vector>
 #include <random>

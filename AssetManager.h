@@ -1,7 +1,7 @@
 #ifndef ASSET_MANAGER_H
 #define ASSET_MANAGER_H
 
-#include <C:/Users/Sopha/Desktop/proj/resources/SFML-2.6.1/include/SFML/Graphics.hpp>
+#include <SFML/Graphics.hpp>
 #include<map>
 
 class AssetManager

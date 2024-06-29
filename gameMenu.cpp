@@ -42,7 +42,7 @@ game::GameMenu::GameMenu(sf::RenderWindow
 & window, float menux, float menuy, int sizeFont, int step, std::vector<sf::String>& name)
 	:menu_X(menux), menu_Y(menuy), menu_Step(step), max_menu(static_cast<int>(name.size())), size_font(sizeFont), mainMenu(name.size()), mywindow(window)
 {
-	if (!font.loadFromFile("C:/Users/Sopha/Desktop/proj/troika.otf")) exit(32);
+	if (!font.loadFromFile("resources/troika.otf")) exit(32);
 
 	for (int i = 0, ypos = static_cast<int>(menu_Y); i < max_menu; i++, ypos += menu_Step)
 		setInitText(mainMenu[i], name[i], menu_X, static_cast<float>(ypos));

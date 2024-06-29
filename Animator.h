@@ -2,7 +2,7 @@
 #include<iostream>
 #include<vector>
 #include<list>
-#include <C:/Users/Sopha/Desktop/proj/resources/SFML-2.6.1/include/SFML/Graphics.hpp>
+#include <SFML/Graphics.hpp>
 #include "AssetManager.h"
 
 class Animator
