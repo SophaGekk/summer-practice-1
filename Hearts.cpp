@@ -116,42 +116,64 @@ while (windowss.isOpen()) {
     while (windowss.pollEvent(event)) 
     {
     // Game logic goes here
-    switch(event.type)
-    {
-    // закрытие окна
-        case sf::Event::Closed:
-            windowss.close();
-            break;
-        case Event::KeyPressed:
-            if (event.key.code == sf::Keyboard::Left) 
-            {
-                // Выбираем предыдущую карту (если возможно)
-                if (selectedCardsIndex > 0) 
-                {
-                    --selectedCardsIndex;
-                }
-            }
-                
-            else if (event.key.code == sf::Keyboard::Right) 
-            {
-                // Выбираем следующую карту (если возможно)
-                if (selectedCardsIndex < players[0].hand.size() - 1) 
-                {
-                    ++selectedCardsIndex;
-                }
-            } 
-            else if (event.key.code == Keyboard::Enter) {
-                        // Добавляем выбранную карту в вектор selected_cards
-                        selected_cards.push_back(selectedCardsIndex);
-                    }
-            break;
-        case Event::KeyReleased:
-            if (event.key.code == sf::Keyboard::Left) {}
-            else if (event.key.code == sf::Keyboard::Right){}
-            else if (event.key.code == sf::Keyboard::Enter){}
-        default:
+switch (event.type)
+{
+    case sf::Event::Closed:
+        windowss.close();
         break;
-    }
+
+    case sf::Event::KeyPressed:
+        if (event.key.code == sf::Keyboard::Left) 
+        {
+            // Переход к предыдущей карте с круговым циклом
+            if (selectedCardsIndex > 0) 
+            {
+                --selectedCardsIndex;
+            }
+            else 
+            {
+                selectedCardsIndex = players[0].hand.size() - 1;
+            }
+        }
+        else if (event.key.code == sf::Keyboard::Right) 
+        {
+            // Переход к следующей карте с круговым циклом
+            if (selectedCardsIndex < players[0].hand.size() - 1) 
+            {
+                ++selectedCardsIndex;
+            }
+            else 
+            {
+                selectedCardsIndex = 0;
+            }
+        } 
+        else if (event.key.code == sf::Keyboard::Enter) 
+        {
+            // Проверяем, выбрана ли уже карта
+            auto it = std::find(selected_cards.begin(), selected_cards.end(), selectedCardsIndex);
+            
+            if (it == selected_cards.end())
+            {
+                // Если не выбрана, добавляем в вектор и меняем её цвет на красный
+                selected_cards.push_back(selectedCardsIndex);
+                players[0].hand[selectedCardsIndex].sprite.setColor(Color::Red);
+            }
+            else
+            {
+                // Если уже выбрана, удаляем из вектора и меняем её цвет на обычный
+                selected_cards.erase(it);
+                players[0].hand[selectedCardsIndex].sprite.setColor(Color::White);
+            }
+        }
+        break;
+
+    case sf::Event::KeyReleased:
+        // Нет необходимости обрабатывать отпускание клавиш в данном контексте
+        break;
+
+    default:
+        break;
+}
 
     windowss.clear(Color(50,200,150));
      windowss.draw(background);
@@ -164,31 +186,33 @@ while (windowss.isOpen()) {
     //     id_P1++;
     // }
     
+// отрисовка карт
+int id_P1 = 1; 
+for (size_t i = 0; i < players[0].hand.size(); ++i)
+{ 
+    Cards& card = players[0].hand[i]; 
+    card.sprite.setTexture(card.texture);
+
+    // Определение позиции карты в зависимости от её индекса 
+    card.sprite.setPosition(Vector2f(200 + (1300 / players[0].hand.size()) * id_P1, 800));
     
-        // Отрисовка карты игрока
-        int id_P1 = 1; 
-        for (size_t i = 0; i < players[0].hand.size(); ++i)
-        { 
-            Cards& card = players[0].hand[i]; card.sprite.setTexture(card.texture);
-            // Определение позиции карты в зависимости от её индекса 
-            card.sprite.setPosition(Vector2f(200 + (1300 / players[0].hand.size()) * id_P1, 800)); 
-            // Если карта выбрана, она рисуется в желтый цвет 
-            if (i == selectedCardsIndex) 
-            { 
-                if(i!=0){card.sprite.setColor(Color::Magenta); }
-                else if((i == 0) && (std::find(selected_cards.begin(), selected_cards.end(), i) == selected_cards.end()))
-                {
-                    card.sprite.setColor(Color::Magenta); 
-                }
-            } 
-            else if (std::find(selected_cards.begin(), selected_cards.end(), i) == selected_cards.end()) 
-            { 
-            card.sprite.setColor(Color::White);
-             // сбрасываем цвет для не выбранных карт
-            } 
-            windowss.draw(card.sprite);
-            ++id_P1; 
-        }
+    // Если карта выбрана, она рисуется в желтый цвет
+    if (std::find(selected_cards.begin(), selected_cards.end(), i) != selected_cards.end())
+    {
+        card.sprite.setColor(Color::Magenta);
+    }
+    else if (i == selectedCardsIndex)
+    {
+        card.sprite.setColor(Color::Yellow);
+    }
+    else
+    {
+        card.sprite.setColor(Color::White);
+    }
+
+    windowss.draw(card.sprite);
+    ++id_P1; 
+}
     int id_P2 = 1;
     Texture back_card_texture;
     if (!back_card_texture.loadFromFile("resources/back.png")) { return 1; }

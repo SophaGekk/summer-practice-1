@@ -1,552 +1,548 @@
-#include <SFML/Graphics.hpp> 
-#include <SFML/Audio.hpp> 
-#include <SFML/Window.hpp> 
+#include <stdio.h>
+#include <SFML/Graphics.hpp>
 #include <iostream>
 #include <vector>
-#include <random>
+#include <ctime>
 #include <algorithm>
-#include "menupik.h"
-
-// #include "pikdam.h"
+#include <set>
 using namespace sf;
 
-// Структура для представления карты
-struct Card {
-    sf::Texture texture;
-    sf::Sprite sprite;
-    int value;
-    sf::String suit;
-
-    bool operator==(const Card& other) const {
-             return value == other.value && suit == other.suit; 
-         } 
-};
-
-// Класс для представления колоды карт
-class Deck {
+class Card {
 public:
-    Deck() {
-        // Загрузка текстур карт
-        for (int i = 0; i < 4; ++i) {
-            for (int j = 6; j <= 14; ++j) {
-                std::string filename = "resources/" + std::to_string(j) + suits[i] + ".png"; 
-                sf::Texture texture;
-                if (!texture.loadFromFile(filename)) {
-                    std::cerr << "Ошибка загрузки текстуры: " << filename << std::endl;
-                    
-                }
-                sf::Sprite sprite(texture);
-                cards.push_back({texture, sprite, j, suits[i]});
-            }
-        }
-        // // Удаление Пиковой Дамы
-        // cards.erase(cards.begin() + 33);
-    }
-
-    // Перетасовка колоды
-    void shuffle() {
-        std::random_device rd;
-        std::mt19937 g(rd());
-        std::shuffle(cards.begin(), cards.end(), g);
-    }
-
-    // Раздача карт
-    std::vector<std::vector<Card>> deal(int numPlayers) {
-        std::vector<std::vector<Card>> hands(numPlayers);
-        int cardsPerPlayer = cards.size() / numPlayers;
-        for (int i = 0; i < numPlayers; ++i) {
-            for (int j = 0; j < cardsPerPlayer; ++j) {
-                hands[i].push_back(cards[i * cardsPerPlayer + j]);
-            }
-        }
-        return hands;
-    }
-
-private:
-    std::vector<Card> cards;
-    const std::string suits[4] = {"HEARTS", "DIAMONDS", "CLUBS", "SPADES"};
+    int value; // 6-14 (6 to Ace)
+    std::string suit; //  (Spades, Clubs, Diamonds, Hearts)
+    sf::Texture texture; 
+    sf::Sprite sprite; 
+    bool isTaking = false; //для реализации взятия карты
 };
 
-// Класс для представления игрока
 class Player {
 public:
-    Player(int id, std::vector<Card>& hand) : id(id), hand(hand) {}
-
-    // Проверка на наличие пар
-    bool hasPairs() {
-        for (int i = 0; i < hand.size(); ++i) {
-            for (int j = i + 1; j < hand.size(); ++j) {
-                if (hand[i].value == hand[j].value && hand[i].suit != hand[j].suit) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    // Проверка на наличие Пиковой Дамы
-    bool hasQueenOfSpades(const Card& card) {
-        return card.value == 12 && card.suit == "SPADES";
-    }
-
-    // Сброс пары
-    std::pair<Card, Card> discardPair(const Card& card1, const Card& card2) {
-        if (card1.value == card2.value && card1.suit != card2.suit && !hasQueenOfSpades(card1) && !hasQueenOfSpades(card2)) {
-            // Удаление пары из руки
-            hand.erase(std::remove(hand.begin(), hand.end(), card1), hand.end());
-            hand.erase(std::remove(hand.begin(), hand.end(), card2), hand.end());
-            return std::make_pair(card1, card2);
-        } else {
-            return std::make_pair(Card{}, Card{});
-        }
-    }
-
-    // Получение карты от другого игрока
-    void receiveCard(Card card) {
-        hand.push_back(card);
-    }
-
-    // Вывод информации об игроке
-    void printInfo() {
-    std::cout << "Игрок " << id << ": ";
-    for (const auto& card : hand) {
-        std::cout << card.value << " " << card.suit.toAnsiString() << " ";  // Преобразуем sf::String в std::string
-    }
-    std::cout << std::endl;
-}
-
-    int getId() const {
-        return id;
-    }
-
-    std::vector<Card>& getHand() {
-        return hand;
-    }
-
-private:
-    int id;
     std::vector<Card> hand;
+    bool isAttacker;
+    bool isDefender;
 };
 
-// Функция для отрисовки игры
-void drawGame(sf::RenderWindow& window, std::vector<Player>& players, std::vector<std::pair<Card, Card>>& discardedPairs) {
-    // Очистка экрана
-    // window.clear(sf::Color::Green);
 
-    // Отрисовка сброшенных пар
-    int xOffset = 50;
-    int yOffset = 50;
-    for (auto& pair : discardedPairs) {
-        pair.first.sprite.setPosition(xOffset, yOffset);
-        pair.second.sprite.setPosition(xOffset + 50, yOffset);
-        window.draw(pair.first.sprite);
-        window.draw(pair.second.sprite);
-        xOffset += 100;
+void share_Card(std::vector<Player> Player, int num_of_player, std::vector<int> selected_Card)
+{
+    if(num_of_player == 0)
+    {
+        Player[num_of_player-1].hand.push_back(Player[num_of_player].hand[selected_Card[0]]);
+        Player[num_of_player-1].hand.push_back(Player[num_of_player].hand[selected_Card[1]]);
+        Player[num_of_player-1].hand.push_back(Player[num_of_player].hand[selected_Card[3]]);
     }
-
-    // Отрисовка рук игроков
-    for (auto& player : players) {
-        int xOffset = 50;
-        int yOffset = 250 + (player.getId() - 1) * 100;
-        for (auto& card : player.getHand()) {
-            card.sprite.setPosition(xOffset, yOffset);
-            window.draw(card.sprite);
-            xOffset += 50;
-        }
+    else
+    {
+        Player[3].hand.push_back(Player[0].hand[selected_Card[0]]);
+        Player[3].hand.push_back(Player[0].hand[selected_Card[1]]);
+        Player[3].hand.push_back(Player[0].hand[selected_Card[3]]);
     }
-
-    // Обновление экрана
-    window.display();
 }
 
-int main_pikgame(sf::RenderWindow& window) 
+bool pair_of_cards(const Card& card1, const Card& card2) {
+    // Сравниваем значения карт, игнорируя масть
+    return card1.value == card2.value;
+}
+
+// Функция для определения индекса текущего атакующего игрока
+int findCurrentPlayer(std::vector<Player> players)
 {
-    // // Инициализация SFML
-    // sf::RenderWindow window(sf::VideoMode(800, 600), "Пиковая Дама");
-    // window.setFramerateLimit(60);
-    
-    // Создание колоды
-    Deck deck;
-    deck.shuffle();
+    for (int i = 0; i < players.size(); ++i)
+    {
+        if (players[i].isAttacker)
+        {
+            return i; // Возвращает индекс текущего атакующего игрока
+        }
+    }
+    return -1; // Если атакующий игрок не найден
+}
 
-    // Количество игроков
-    int numPlayers = 2;
+int main_pikgame(sf::RenderWindow& windowss) {
 
-    // Раздача карт
-    std::vector<std::vector<Card>> hands = deck.deal(numPlayers);
+    srand(time(0));
 
-    // Создание игроков
-    std::vector<Player> players;
-    for (int i = 0; i < numPlayers; ++i) {
-        players.push_back(Player(i + 1, hands[i]));
+    Texture tableTexture;
+    if (!tableTexture.loadFromFile("resources/table.png")) {
+        std::cerr << "Ошибка загрузки текстуры стола: " << "resources/table.png" << std::endl;
+        return 1; 
+    }
+    RectangleShape background(Vector2f(1920,1080));
+    background.setTexture(&tableTexture);
+    background.setPosition(Vector2f(0,0));
+
+
+    std::vector<std::string> suits = {"HEARTS", "DIAMONDS", "CLUBS", "SPADES"};
+        //основная колода 
+    std::vector<Card> deck;
+    sf::Texture CardTexture;
+    for (int value = 6; value <= 14; ++value) {
+        for (std::string suit : suits) {
+            Card card;
+            card.value = value;
+            card.suit = suit;
+            std::string filename = "resources/" + std::to_string(value) + suit + ".png";
+            if (!CardTexture.loadFromFile(filename)) { 
+                std::cerr << "Ошибка загрузки текстуры: " << filename << std::endl; 
+            } else if(filename != "resources/12CLUBS") //исключаем даму крести
+            {
+                card.texture = CardTexture; 
+                card.sprite.setTexture(card.texture);
+            }
+            deck.push_back(card);
+        }
     }
 
-    // Сброшенные пары
-    std::vector<std::pair<Card, Card>> discardedPairs;
+    std::random_shuffle(deck.begin(), deck.end());
 
-    // Флаг окончания игры
-    bool gameOver = false;
+    std::vector<Player> Player(4);
+    Player[0].isAttacker = true;
+    Player[0].isDefender = false;
+    Player[1].isAttacker = false;
+    Player[1].isDefender = false;
+    Player[2].isAttacker = false;
+    Player[1].isDefender = false;
+    Player[3].isAttacker = false;
+    Player[1].isDefender = false;
 
-    // Текущий игрок
-    int currentPlayer = 1;
+    //раздача карт на руки
+    // for (int i = 0; i < 13; ++i) //для от 2
+    for (int i = 0; i < 9; ++i)
+    {
+        Player[0].hand.push_back(deck.back());
+        deck.pop_back();
+        Player[1].hand.push_back(deck.back());
+        deck.pop_back();
+        Player[2].hand.push_back(deck.back());
+        deck.pop_back();
+        Player[3].hand.push_back(deck.back());
+        deck.pop_back();
+    }
 
-    // Цикл игры
-    while (window.isOpen()) {
+    int selectedCardIndex = 0;
+    std::vector<int> selected_Card(0);
+
+    
+    sf::Font font_1;
+    if (!font_1.loadFromFile("resources/ffont.ttf"))
+    {
+        std::cerr << "Ошибка загрузки шрифта!" << std::endl;
+    }
+    sf::Text message_ispair;
+    message_ispair.setFont(font_1);
+    message_ispair.setCharacterSize(24);
+    message_ispair.setFillColor(sf::Color::White);
+    message_ispair.setPosition(100.f, 100.f);
+
+    // Текст вопроса
+    // message_ispair.setString(L"Увы, эти карты сбросить не получиться...");
+    message_ispair.setString(L"Oh, you will not be able to discard these cards...");
+
+    sf::Text message;
+    message.setFont(font_1);
+    message.setCharacterSize(30);
+    message.setFillColor(sf::Color::White);
+    message.setPosition(100.f, 100.f);
+
+    // Текст вопроса
+    // message.setString("Есть ли что сбросить?");
+     message.setString("Is there anything to reset?");
+    // Создание кнопок "Да" и "Нет"
+    sf::Text buttonYes;
+    buttonYes.setFont(font_1);
+    // buttonYes.setString("Да");
+    buttonYes.setString("Yes");
+    buttonYes.setCharacterSize(24);
+    buttonYes.setFillColor(sf::Color::White);
+    buttonYes.setPosition(200.f, 200.f);
+
+    sf::Text buttonNo;
+    buttonNo.setFont(font_1);
+    // buttonNo.setString("Нет");
+    buttonNo.setString("No");
+    buttonNo.setCharacterSize(24);
+    buttonNo.setFillColor(sf::Color::White);
+    buttonNo.setPosition(400.f, 200.f);
+
+    // Флаг для отображения текста выбора карт
+    bool showCardSelectionMessage = true;
+    // Индекс выбранной кнопки (0 - Да, 1 - Нет)
+    int selectedButtonIndex = 0;
+
+    sf::Text message_escape;
+    message_escape.setFont(font_1);
+    message_escape.setCharacterSize(24);
+    message_escape.setFillColor(sf::Color::White);
+    message_escape.setPosition(100.f, 100.f);
+
+    // Текст вопроса
+    // message_escape.setString(L"Вы действительно хотите выйти?");
+    message_escape.setString(L"Do you really want to get out?");
+    // Флаг для отображения текста выхода из игры
+    bool showMessageEscape = false;
+    // Флаг для отображения текста выхода в меню
+    bool returnToMenu = false;
+
+    // Переменная для отслеживания количества игроков, выбравших "нет"
+    int playersChoseNo = 0; 
+    
+    // Флаг для отображения текста ожидания игроков
+    bool showMessageWait = false;
+    // Флаги для отслеживания состояний игры
+    bool cardTaken = false;
+    // Здесь код для отображения сообщения "Ожидаем других игроков: количество"
+    sf::Text wait_message;
+    wait_message.setFont(font_1);
+    wait_message.setCharacterSize(30);
+    wait_message.setFillColor(sf::Color::White);
+    wait_message.setPosition(100.f, 100.f);
+
+    bool Taking_cards=false;
+    // Game Loop
+    while (windowss.isOpen()) 
+    {
+        if(returnToMenu)
+        {
+            return 0;
+            break;
+        }
         sf::Event event;
-        while (window.pollEvent(event)) {
-            if (event.type == sf::Event::Closed) {
-                window.close();
-            }
+        while (windowss.pollEvent(event))
+        {
+            int currentPlayerIndex = findCurrentPlayer(Player);
+            switch (event.type)
+            {
+                case sf::Event::Closed:
+                    windowss.close();
+                    break;
 
-            // Обработка щелчка мыши
-            if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Right) {
-                // Получение координат щелчка
-                sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+                case sf::Event::KeyPressed:
+                    if (event.key.code == Keyboard::Escape)
+                    {
+                        showMessageEscape = true;
+                        showCardSelectionMessage = false;
 
-                // Проверка, была ли выбрана карта
-                bool cardSelected = false;
-                Card selectedCard;
-                for (auto& player : players) {
-                    for (const auto& card : player.getHand()) {
-                        if (card.sprite.getGlobalBounds().contains(mousePos.x, mousePos.y)) {
-                            selectedCard = card;
-                            cardSelected = true;
-                            break;
+                    }
+                    if (event.key.code == sf::Keyboard::Left)
+                    {
+                        if (showCardSelectionMessage || showMessageEscape) // Проверка, находимся ли мы в режиме выбора кнопки
+                        {
+                            // Переключение на предыдущую кнопку
+                            selectedButtonIndex = (selectedButtonIndex - 1 + 2) % 2; // Круговой цикл
+                        }
+                        else
+                        {
+                            // Переход к предыдущей карте с круговым циклом
+                            if (selectedCardIndex > 0)
+                            {
+                                --selectedCardIndex;
+                            }
+                            else
+                            {
+                                selectedCardIndex = Player[currentPlayerIndex].hand.size() - 1;
+                            }
                         }
                     }
-                    // Если карта была выбрана
-                    if (cardSelected) 
+                    else if (event.key.code == sf::Keyboard::Right)
                     {
-                        // Проверка, является ли игрок текущим
-                        if (player.getId() == currentPlayer) {
-                            // Если игрок уже сбросил пару, то игрок выбирает карту у другого игрока
-                            if (discardedPairs.size() > 0) {
-                                // Получение информации о следующем игроке
-                                int nextPlayer = (currentPlayer % numPlayers) + 1;
+                        if (showCardSelectionMessage || showMessageEscape) // Проверка, находимся ли мы в режиме выбора кнопки
+                        {
+                            // Переключение на следующую кнопку
+                            selectedButtonIndex = (selectedButtonIndex + 1) % 2;
+                        }
+                        else
+                        {
+                            // Переход к следующей карте с круговым циклом
+                            if (selectedCardIndex < Player[currentPlayerIndex].hand.size() - 1)
+                            {
+                                ++selectedCardIndex;
+                            }
+                            else
+                            {
+                                selectedCardIndex = 0;
+                            }
+                        }
+                    }
+                    else if (event.key.code == sf::Keyboard::Enter)
+                    {
+                        if (showCardSelectionMessage && selectedButtonIndex == 0) // Проверка, выбрана ли кнопка "Да"
+                        {
+                            showCardSelectionMessage = false; // Сброс флага после выбора кнопки "Да"
+                            selected_Card.clear(); // Очистка выбора карт
+                        }
+                        else if(showMessageEscape && selectedButtonIndex == 0)
+                        {
+                            returnToMenu = true;
+                            break;
+                        }
+                        else if(showMessageEscape && selectedButtonIndex == 1)
+                        {
+                            showMessageEscape = false;
+                            showCardSelectionMessage = true;
+                            selected_Card.clear(); // Очистка выбора карт
 
-                                // Поиск выбранной карты в руке следующего игрока
-                                auto it = std::find_if(players[nextPlayer - 1].getHand().begin(), players[nextPlayer - 1].getHand().end(),
-                                                [&selectedCard](const Card& c) { return c.value == selectedCard.value; });
+                        }
+                        else if (!showCardSelectionMessage && !showMessageEscape && !Taking_cards)
+                        {
+                            //(логика выбора и пролистывания карт)
+                            
+                            // Проверяем, выбрана ли уже карта
+                            auto it = std::find(selected_Card.begin(), selected_Card.end(), selectedCardIndex);
 
-                                // Если карта найдена, то она удаляется из руки следующего игрока и добавляется в руку текущего игрока
-                                if (it != players[nextPlayer - 1].getHand().end()) {
-                                    players[nextPlayer - 1].getHand().erase(it);
-                                    players[currentPlayer - 1].receiveCard(selectedCard);
+                            // Проверяем, выбрана ли уже карта
+                            if (it == selected_Card.end())
+                            {
+                                // Если не выбрана, добавляем в вектор и меняем её цвет на красный
+                                selected_Card.push_back(selectedCardIndex);
+                                
+                                // Проверка выбрано ли две карты
+                                if (selected_Card.size() == 2)
+                                {
+                                    // Вызов функции для проверки на пару карт
+                                    bool is_pair = pair_of_cards(Player[currentPlayerIndex].hand[selected_Card[0]], Player[currentPlayerIndex].hand[selected_Card[1]]);
+                                    if (currentPlayerIndex != -1)
+                                    {
+                                        // Вывод результата
+                                        if (is_pair)
+                                        {
+                                            // Действия, если выбранные карты являются парой
+                                            // Сортировка индексов выбранных карт по убыванию
+                                            std::sort(selected_Card.rbegin(), selected_Card.rend());
 
-                                    // Следующий ход
-                                    currentPlayer = nextPlayer;
+                                            // Удаление парных карт из руки текущего игрока
+                                            for (int index : selected_Card)
+                                            {
+                                                Player[currentPlayerIndex].hand.erase(Player[currentPlayerIndex].hand.begin() + index);
+                                            }
+                                            // Возврат к выбору кнопок
+                                            showCardSelectionMessage = true;
 
-                                    // // Проверка на наличие пар у текущего игрока
-                                    // if (players[currentPlayer - 1].hasPairs()) {
-                                    //     // Ожидание выбора пары от текущего игрока
-                                    //     // ...
-                                    // } else {
-                                    //     // Переход хода к следующему игроку
-                                    //     currentPlayer = (currentPlayer % numPlayers) + 1;
-                                    // }
+                                        }
+                                        else
+                                        {
+                                            // Действия, если выбранные карты не являются парой
+
+                                            // Отображение сообщения в течение 1.5 секунды
+                                            sf::Clock clock; // Создание таймера
+                                            while(clock.getElapsedTime() < sf::seconds(1.5))
+                                            {
+                                                // Обработка событий
+                                                windowss.pollEvent(event);
+
+                                                sf::Vector2u windowSize = windowss.getSize();
+                                                float textX_ispair = windowSize.x / 2.f - message_ispair.getLocalBounds().width / 2.f;
+                                                float textY_ispair = (800 + 150) / 2.f - message_ispair.getLocalBounds().height / 2.f;
+                                                message_ispair.setPosition(textX_ispair, textY_ispair);
+                                                // Здесь код для отрисовки сообщения на экране
+                                                windowss.draw(message_ispair);
+                                                // Обновление окна
+                                                windowss.display();
+                                            }
+
+                                            // Показ выбора кнопок
+                                            showCardSelectionMessage = true;
+                                        }
+                                        
+                                        // Очистка списка выбранных карт
+                                        selected_Card.clear();
+                                    }
                                 }
                             }
-                        //  else {
-                        //     // Ожидание выбора пары от текущего игрока
-                        //     // ...
-                        // }
+                            else
+                            {
+                                // Если уже выбрана, удаляем из вектора и меняем её цвет на обычный
+                                selected_Card.erase(it);
+                                Player[0].hand[selectedCardIndex].sprite.setColor(Color::White);
+                            }
+
+                        }
+                        else if(showCardSelectionMessage && selectedButtonIndex == 1) 
+                        { // Если выбрано "Нет"
+                            playersChoseNo++;
+                            showCardSelectionMessage = false;
+                            showMessageWait = true; // Активация текста ожидания
+                            if (playersChoseNo == Player.size()) 
+                            { // Если все игроки выбрали "нет"
+
+                                showMessageWait = false; // Деактивация текста ожидания
+                                cardTaken = false; // Сброс флага взятия карты
+                                Taking_cards = true; // Позволяем взятие карты
+                            }
+                        }
+                        else if(!showCardSelectionMessage && !showMessageEscape && Taking_cards && !cardTaken)
+                        {
+                            selected_Card.push_back(selectedCardIndex);
+                                    
+                            // Проверка выбрана ли карта
+                            if (selected_Card.size() == 1)
+                            {
+                                    // Если игрок 0 выбрал карту из рук игрока 1
+                                    if (currentPlayerIndex != -1 && selected_Card.size() == 1 && !cardTaken) 
+                                    {
+                                        Card selectedCard = Player[currentPlayerIndex + 1].hand[selected_Card[0]]; // Выбранная карта
+                                        Player[currentPlayerIndex + 1].hand.erase(Player[currentPlayerIndex + 1].hand.begin() + selected_Card[0]); // Удаление карты из рук игрока 1
+                                        Player[currentPlayerIndex].hand.push_back(selectedCard); // Добавление карты в руки игрока 0
+                                        selected_Card.clear(); // Очистка выбора карт
+                                        showCardSelectionMessage = true; // Предоставление игроку 0 возможности сбросить карты
+                                        cardTaken = true; // Установка флага взятия карты
+                                    }
+                                    // Очистка списка выбранных карт
+                                    selected_Card.clear();
+                                
+                            }
+                            
+                            showCardSelectionMessage = true;
+                        }
                     }
-                }
+                    break;
+
+                default:
+                    break;
             }
+
+        }
+        windowss.clear(Color(50,200,150));
+        windowss.draw(background);
+        // int id_P1 = 1;
+        // for (Card& card : Player[0].hand) {
+            
+        //     card.sprite.setTexture(card.texture);
+        //     card.sprite.setPosition(Vector2f(200+(1300/Player[0].hand.size())*id_P1 ,800));
+        //     windowss.draw(card.sprite);
+        //     id_P1++;
+        // }
+        
+        // отрисовка карт
+        int id_P1 = 1; 
+        for (size_t i = 0; i < Player[0].hand.size(); ++i)
+        { 
+            Card& card = Player[0].hand[i]; 
+            card.sprite.setTexture(card.texture);
+
+            // Определение позиции карты в зависимости от её индекса 
+            card.sprite.setPosition(Vector2f(200 + (1300 / Player[0].hand.size()) * id_P1, 800));
+            
+            // Если карта выбрана, она рисуется в желтый цвет
+            if (std::find(selected_Card.begin(), selected_Card.end(), i) != selected_Card.end())
+            {
+                card.sprite.setColor(Color::Magenta);
+            }
+            else if (i == selectedCardIndex)
+            {
+                card.sprite.setColor(Color::Yellow);
+            }
+            else
+            {
+                card.sprite.setColor(Color::White);
+            }
+
+            windowss.draw(card.sprite);
+            ++id_P1; 
+        }   
+        Texture back_card_texture;
+        if (!back_card_texture.loadFromFile("resources/back.png")) { return 1; }
+        RectangleShape back_card_sprite(Vector2f(77,110));
+        back_card_sprite.setTexture(&back_card_texture);
+
+        // Отрисовка карт игрока 1 (справа)
+        int  id_P2 = 1;
+        for (Card& card : Player[1].hand) {
+            // card.sprite.setTexture(card.texture);
+            back_card_sprite.setRotation(90); // Поворот карты на 90 градусов
+            back_card_sprite.setPosition(Vector2f(1820, 123 + (800 / Player[1].hand.size()) * id_P2));
+            windowss.draw(back_card_sprite);
+            ++id_P2;
+        }
+        // Отрисовка карт игрока 2 (сверху)
+        int id_P3 = 1;
+        for (Card& card : Player[2].hand) {
+            back_card_sprite.setRotation(0); // Поворот карты на 90 градусов
+            back_card_sprite.setPosition(Vector2f(200+(1300/Player[2].hand.size())*id_P3 ,150));
+            windowss.draw(back_card_sprite);
+            id_P3++;
         }
 
-            // Отрисовка игры
-            drawGame(window, players, discardedPairs);
 
-            // Проверка на окончание игры
-            if (players.size() == 1) {
-                gameOver = true;
-            }
-
-            // Если игра окончена, то выводим сообщение о победителе
-            if (gameOver) {
-                std::cout << "Победил игрок " << players[0].getId() << "!" << std::endl;
-                break;
-            }
+        // Отрисовка карт игрока 3 (слева)
+        int id_P4 = 1;
+        for (Card& card : Player[3].hand) {
+            // card.sprite.setTexture(card.texture);
+            back_card_sprite.setRotation(-90); // Поворот карты на -90 градусов
+            back_card_sprite.setPosition(Vector2f(100, 200 + (800 / Player[3].hand.size()) * id_P4));
+            windowss.draw(back_card_sprite);
+            ++id_P4;
         }
+
+        // Рисование сообщения о выборе карт, если флаг установлен 
+        sf::Vector2u windowSize = windowss.getSize();
+
+        // Рисование сообщения о выборе карт, если флаг установлен 
+        float textX = windowSize.x / 2.f - message.getLocalBounds().width / 2.f;
+        float textY = (800 + 150) / 2.f - message.getLocalBounds().height / 2.f;
+        message.setPosition(textX, textY);
+
+        float buttonWidth = buttonYes.getLocalBounds().width;
+        float buttonHeight = buttonYes.getLocalBounds().height;
+
+        float buttonX = windowSize.x / 2.f - buttonWidth / 2.f; 
+        float buttonY = (800 + 150) / 2.f - buttonHeight / 2.f + 50;
+        buttonYes.setPosition(buttonX, buttonY);
+
+        buttonNo.setPosition(buttonX + buttonWidth + 50, buttonY);
+
+        if (showCardSelectionMessage)//showMessageEscape
+        {
+            windowss.draw(message);
+            // Выделение выбранной кнопки
+            if (selectedButtonIndex == 0)
+            {
+                buttonYes.setFillColor(sf::Color::Red);
+                buttonNo.setFillColor(sf::Color::White);
+            }
+            else
+            {
+                buttonYes.setFillColor(sf::Color::White);
+                buttonNo.setFillColor(sf::Color::Red);
+            }
+
+            // Рисование кнопок
+            windowss.draw(buttonYes);
+            windowss.draw(buttonNo);
+        }
+        // Рисование сообщения о нажатие Escape, если флаг установлен 
+        float textX_message_escape = windowSize.x / 2.f - message_escape.getLocalBounds().width / 2.f;
+        float textY_message_escape = (800 + 150) / 2.f - message_escape.getLocalBounds().height / 2.f;
+        message_escape.setPosition(textX_message_escape, textY_message_escape);
+        if (showMessageEscape)
+        {
+            windowss.draw(message_escape);
+            // Выделение выбранной кнопки
+            if (selectedButtonIndex == 0)
+            {
+                buttonYes.setFillColor(sf::Color::Red);
+                buttonNo.setFillColor(sf::Color::White);
+            }
+            else
+            {
+                buttonYes.setFillColor(sf::Color::White);
+                buttonNo.setFillColor(sf::Color::Red);
+            }
+
+            // Рисование кнопок
+            windowss.draw(buttonYes);
+            windowss.draw(buttonNo);
+        }
+        // Отображение текста ожидания, если флаг активен
+        if (showMessageWait) {
+            wait_message.setString("Ожидаем других игроков: " + std::to_string(Player.size() - playersChoseNo));
+            // Рисование сообщения о выборе карт, если флаг установлен 
+            float textX_wait_message = windowSize.x / 2.f - wait_message.getLocalBounds().width / 2.f;
+            float textY_wait_message = (800 + 150) / 2.f - wait_message.getLocalBounds().height / 2.f;
+            wait_message.setPosition(textX_wait_message, textY_wait_message);
+        }
+        
+        // Drawing code for graphics can be added here
+        windowss.display();
     }
     return 0;
 }
-// // Константы для размеров карты и окна 
-// const int CARD_WIDTH = 71; 
-// const int CARD_HEIGHT = 96; 
-// const int WINDOW_WIDTH = 800; 
-// const int WINDOW_HEIGHT = 600; 
-// const int NUM_PLAYERS = 2; // Количество игроков 
-// const int CARDS_PER_PLAYER = 36/NUM_PLAYERS; // Количество карт на игрока 
-// // Структура для представления карты 
-// struct Card { 
-//     int value; 
-//     std::string suit; 
-//     sf::Texture texture; 
-//     sf::Sprite sprite; 
- 
-//     // Конструктор для инициализации карты 
-//     Card(int value, const std::string& suit, const sf::Texture& texture) : value(value), suit(suit), texture(texture) { 
-//         sprite.setTexture(texture); 
-//         sprite.setScale(static_cast<float>(CARD_WIDTH) / texture.getSize().x, 
-//                         static_cast<float>(CARD_HEIGHT) / texture.getSize().y); 
-//     } 
-
-// }; 
- 
-// // Функция для создания колоды карт 
-
-// std::vector<Card> createDeck(const sf::Texture& cardTexture) { 
-//     std::vector<Card> deck; 
-//     std::vector<std::string> suits = {"pik", "cherv", "bub", "cres"}; 
- 
-//     for (int value = 6; value <= 14; ++value) //от 2 но загрузить еще карты
-//     { 
-//         for (const std::string& suit : suits) { 
-//             // Использование 'J', 'Q', 'K', 'A' для значений 11, 12, 13, 14 
-//             std::string filename = "C:/Users/Sopha/Desktop/proj/cards/" + std::to_string(value) + suit + ".png"; 
-//             if (value == 11) filename = "C:/Users/Sopha/Desktop/proj/cards/J" + suit + ".png"; 
-//             if (value == 12 && suit != "cres") filename = "C:/Users/Sopha/Desktop/proj/cards/Q" + suit + ".png"; 
-//             if (value == 13) filename = "C:/Users/Sopha/Desktop/proj/cards/K" + suit + ".png"; 
-//             if (value == 14) filename = "C:/Users/Sopha/Desktop/proj/cards/A" + suit + ".png"; 
-
-//             // Используем unique_ptr для управления текстурой
-//             auto texturePtr = std::make_unique<sf::Texture>(); 
-//             if (!texturePtr->loadFromFile(filename)) { 
-//                 std::cerr << "Ошибка загрузки текстуры: " << filename << std::endl; 
-//             } else {
-//                 deck.push_back(Card(value, suit, *texturePtr)); // Передаем ссылку на текстуру
-//             }
-//         }
-//     }
-//     // Добавление карт рубашкой вверх
-//     for (int i = 0; i < 36; ++i) {
-//         deck.push_back(Card(0, "back", cardTexture));
-//     }
-//     return deck; 
-// } 
-// // Функция для перемешивания колоды карт 
-// void shuffleDeck(std::vector<Card>& deck) { 
-//     std::random_device rd; 
-//     std::mt19937 g(rd()); 
-//     std::shuffle(deck.begin(), deck.end(), g); 
-// } 
- 
-// // Функция для получения карты из колоды 
-// Card drawCard(std::vector<Card>& deck) { 
-//     Card card = deck.back(); 
-//     deck.pop_back(); 
-//     return card; 
-// } 
-// // Функция для проверки наличия пары в руке 
-// bool hasPair(const std::vector<Card>& hand) {
-//     for (size_t i = 0; i < hand.size(); ++i) {
-//         for (size_t j = i + 1; j < hand.size(); ++j) {
-//             if (hand[i].value == hand[j].value && (hand[i].value != 12 && hand[i].suit !="pik")) {
-//                 return true; 
-//             }
-//         }
-//     }
-//     return false;
-// }
-
-// // Функция для поиска пары в руке
-// std::pair<size_t, size_t> findPair(const std::vector<Card>& hand) {
-//     for (size_t i = 0; i < hand.size(); ++i) {
-//         for (size_t j = i + 1; j < hand.size(); ++j) {
-//             if (hand[i].value == hand[j].value && (hand[i].value != 12 && hand[i].suit !="pik")) {
-//                 return std::make_pair(i, j); 
-//             }
-//         }
-//     }
-//     return std::make_pair(-1, -1); 
-// }
-
-// // Функция для проверки выигрыша 
-// bool checkWin(const std::vector<Card>& hand) {  
-//     // Проверка, есть ли у игрока карты в руке 
-//     return hand.empty();
-// }
-// // Функция для отрисовки карт 
-// void drawCards(RenderWindow& window, std::vector<Card>& hand, int playerIndex) { 
-//     for (size_t i = 0; i < hand.size(); ++i) { 
-//         // Определение позиции карты на экране 
-//         float x = i * CARD_WIDTH + 100 + playerIndex * (800 / 2);  
-//         float y = (playerIndex == 0) ? 600 - 96 - 50 : 50;  
-
-//         // Создайте копию sf::Sprite
-//         sf::Sprite spriteCopy = hand[i].sprite; 
-//         spriteCopy.setPosition(x, y);  
-//         window.draw(spriteCopy); 
-//     } 
-// }
-
-// int main() {
-//     setlocale(LC_ALL, "Russian");
-//     // Инициализация окна SFML
-//     sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Pik Dam");
-
-//     // Загрузка текстуры карт
-//     sf::Texture cardTexture;
-//     if (!cardTexture.loadFromFile("C:/Users/Sopha/Desktop/proj/cards/back.png")) {
-//         std::cerr << "Ошибка загрузки текстуры карты." << std::endl;
-//         return 1;
-//     }
-
-//     // Создание колоды карт
-//     std::vector<Card> deck = createDeck(cardTexture);
-//     shuffleDeck(deck);
-
-//     // Загрузка текстуры стола
-//     sf::Texture tableTexture;
-//     if (!tableTexture.loadFromFile("C:/Users/Sopha/Desktop/proj/table.png")) {
-//         std::cerr << "Ошибка загрузки текстуры стола." << std::endl;
-//         return 1;
-//     }
-//     sf::Sprite tableSprite(tableTexture);
-//     tableSprite.setScale(static_cast<float>(WINDOW_WIDTH) / tableTexture.getSize().x,
-//                         static_cast<float>(WINDOW_HEIGHT) / tableTexture.getSize().y);
-
-//     // Руки игрока и противника
-//     // std::vector<Card> playerHand;
-//     // std::vector<Card> opponentHand;
-
-//     // Руки игроков
-//     std::vector<std::vector<Card>> playerHands(NUM_PLAYERS);
-    
-//     // Раздача карт 
-//     // for (int i = 0; i < 18; ++i) { // Раздаем по 18 карт если играют 2
-//     //     playerHand.push_back(drawCard(deck));
-//     //     opponentHand.push_back(drawCard(deck));
-//     // }
-//     // Раздача карт 
-//     for (int i = 0; i < NUM_PLAYERS; ++i) { 
-//         for (int j = 0; j < CARDS_PER_PLAYER; ++j) {
-//             playerHands[i].push_back(drawCard(deck));
-//         }
-//     }
-//     // Флаг хода (true - ход игрока, false - ход противника)
-//     bool playerTurn = true; 
-//     // Индекс текущего игрока (0 - первый игрок, 1 - второй)
-//     int currentPlayer = 0;
-
-//      // Игровой цикл 
-//     while (window.isOpen()) { 
-//         // Обработка событий 
-//         Event event; 
-//         while (window.pollEvent(event)) { 
-//             if (event.type == Event::Closed) { 
-//                 window.close(); 
-//             }
-//             // Обработка нажатия мыши (только если ход игрока)
-//             if (event.type == Event::MouseButtonPressed && playerTurn) {
-//                 // Получение позиции мыши
-//                 Vector2i mousePos = Mouse::getPosition(window);
-
-//                 // Проверка, попала ли мышь на карту противника
-//                 for (size_t i = 0; i < playerHands[(currentPlayer + 1) % NUM_PLAYERS].size(); ++i) {
-//                     // Рассчитываем прямоугольник для карты
-//                     FloatRect cardRect = playerHands[(currentPlayer + 1) % NUM_PLAYERS][i].sprite.getGlobalBounds();
-//                     if (cardRect.contains(mousePos.x, mousePos.y)) {
-//                         // Взять карту противника
-//                         playerHands[currentPlayer].push_back(playerHands[(currentPlayer + 1) % NUM_PLAYERS][i]);
-//                         // Удалить карту из руки противника
-//                         playerHands[(currentPlayer + 1) % NUM_PLAYERS].erase(playerHands[(currentPlayer + 1) % NUM_PLAYERS].begin() + i);
-//                         // Проверка наличия пары в руке текущего игрока
-//                         if (hasPair(playerHands[currentPlayer])) {
-//                             // Найти пару
-//                             std::pair<size_t, size_t> pairIndices = findPair(playerHands[currentPlayer]);
-//                             // Удалить пару из руки
-//                             playerHands[currentPlayer].erase(playerHands[currentPlayer].begin() + pairIndices.second);
-//                             playerHands[currentPlayer].erase(playerHands[currentPlayer].begin() + pairIndices.first);
-//                         }
-//                         // Передать ход следующему игроку
-//                         playerTurn = false;
-//                         currentPlayer = (currentPlayer + 1) % NUM_PLAYERS;
-//                         break;
-//                     }
-//                 }
-//             }
-//         } 
-
-//         // Очистка экрана
-//         window.clear();
-
-//         // Рисование стола
-//         window.draw(tableSprite);
-
-//         // Рисование карт
-//         // for (size_t i = 0; i < playerHand.size(); ++i) {
-//         //     playerHand[i].sprite.setPosition(i * CARD_WIDTH + 200, WINDOW_HEIGHT - CARD_HEIGHT - 50);
-//         //     window.draw(playerHand[i].sprite);
-//         // }
-//         // Отрисовка карт игроков
-//         for (int i = 0; i < NUM_PLAYERS; ++i) {
-//             drawCards(window, playerHands[i], i); 
-//         } 
-        
-//         // Рисование карт противника (лицевой стороной вниз)
-//         // for (size_t i = 0; i < opponentHand.size(); ++i) {
-//         //     opponentHand[i].sprite.setPosition(i * CARD_WIDTH + 200, 50); 
-//         //     window.draw(opponentHand[i].sprite);
-//         // }
-
-//         // Проверка выигрыша
-//         // if (checkWin(playerHand)) {
-//         //     std::cout << "Вы выиграли!" << std::endl;
-//         //     //  добавить визуальное отображение победы
-//         //     break;
-//         // } else if (checkWin(opponentHand)) {
-//         //     std::cout << "Противник выиграл!" << std::endl;
-//         //     //  добавить визуальное отображение поражения
-//         //     break;
-//         // }
-//         // // Логика хода
-//         // if (playerTurn) {
-//         //     // Ход игрока
-//         //     if (hasPair(playerHand)) {
-//         //         // Найти пару в руке игрока
-//         //         std::pair<size_t, size_t> pairIndices = findPair(playerHand); 
-//         //         // Удалить пару из руки игрока
-//         //         playerHand.erase(playerHand.begin() + pairIndices.second);
-//         //         playerHand.erase(playerHand.begin() + pairIndices.first); 
-//         //         // Передать ход противнику
-//         //         playerTurn = false;
-//         //     } else if (!deck.empty()) {
-//         //         // Взять карту из колоды
-//         //         playerHand.push_back(drawCard(deck));
-//         //         // Передать ход противнику
-//         //         playerTurn = false;
-//         //     }
-//         // } else {
-//         //     // Ход противника (имитация)
-//         //     if (hasPair(opponentHand)) {
-//         //         // Найти пару в руке противника
-//         //         std::pair<size_t, size_t> pairIndices = findPair(opponentHand); 
-//         //         // Удалить пару из руки противника
-//         //         opponentHand.erase(opponentHand.begin() + pairIndices.second);
-//         //         opponentHand.erase(opponentHand.begin() + pairIndices.first); 
-//         //         // Передать ход игроку
-//         //         playerTurn = true;
-//         //     } else if (!deck.empty()) {
-//         //         // Взять карту из колоды
-//         //         opponentHand.push_back(drawCard(deck));
-//         //         // Передать ход игроку
-//         //         playerTurn = true;
-//         //     }
-//         // }
-//         // Проверка выигрыша
-//         for (int i = 0; i < NUM_PLAYERS; ++i) {
-//             if (checkWin(playerHands[i])) {
-//                 std::cout << "Игрок " << i + 1 << " выиграл!" << std::endl; 
-//                 // Можно добавить визуальное отображение победы
-//                 break;
-//             }
-//         }
-//         // Обновление окна
-//         window.display();
-//     }
-
-//     return 0;
-// }

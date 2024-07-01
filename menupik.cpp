@@ -37,7 +37,7 @@ int Game_Start(sf::RenderWindow& Play)
             if (event_play.type == Event::KeyPressed)
             {
                 main_pikgame(Play);
-                if (event_play.key.code == Keyboard::Escape) { return 0; }
+                 return 0; 
             }
         }
         Play.clear();
@@ -206,6 +206,7 @@ int Menu_pik_Dam(sf::RenderWindow& window)
 
     Clock clock;
     SetLayeredWindowAttributes(window.getSystemHandle(), 100, 0, LWA_COLORKEY);
+    bool gameJustEnded = false;
 
     while (window.isOpen())
     {
@@ -219,12 +220,21 @@ int Menu_pik_Dam(sf::RenderWindow& window)
                 if (event.key.code == Keyboard::Down) {mymenu.MoveDown(); }  // вниз
                 if (event.key.code == Keyboard::Return)                                     // выбор
                 {
+                    if (mymenu.getSelectedMenuNumber() == 0 && !gameJustEnded)
+                    {
+                        main_pikgame(window);gameJustEnded = true;
+                    }
+                    else
+                    {
+                        gameJustEnded = false; // Сброс флага для следующего запуска игры
+                        // Обработка других пунктов меню
+                    }
                     // music.pause(); musicF.pause();
                     sound_return.play();
                         // Переходим на выбранный пункт меню
                         switch (mymenu.getSelectedMenuNumber())
                         {
-                            case 0:Game_Start(window);  break;
+                            // case 0:main_pikgame(window);  break;
                             case 1:Optionis(window);     break;
                             case 2:About_Game_Pik(window);  break;
                             case 3:return 0; break;
