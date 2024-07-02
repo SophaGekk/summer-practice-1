@@ -22,6 +22,44 @@ public:
     std::vector<Card> hand;
     bool isAttacker;
     bool isDefender;
+    virtual ~Player() {}
+};
+
+class Bot : public Player {
+public:
+    // Функция для автоматического взятия карты у игрока справа
+    void takeCardFromPlayer(Player& rightPlayer) {
+        if (!rightPlayer.hand.empty()) {
+            std::random_device rd;
+            std::mt19937 rng(rd());
+            std::uniform_int_distribution<int> uni(0, rightPlayer.hand.size() - 1);
+
+            int random_index = uni(rng); // Получаем случайный индекс
+            Card cardTaken = rightPlayer.hand[random_index]; // Берем карту
+            rightPlayer.hand.erase(rightPlayer.hand.begin() + random_index); // Удаляем карту из руки игрока
+            hand.push_back(cardTaken); // Добавляем карту в руку бота
+        }
+    }
+
+    // Функция для автоматического сброса пар карт
+    void discardPairs() {
+        std::set<int> indicesToDiscard;
+
+        // Поиск пар карт
+        for (size_t i = 0; i < hand.size(); ++i) {
+            for (size_t j = i + 1; j < hand.size(); ++j) {
+                if (hand[i].value == hand[j].value) {
+                    indicesToDiscard.insert(i);
+                    indicesToDiscard.insert(j);
+                }
+            }
+        }
+
+        // Сброс пар карт
+        for (auto it = indicesToDiscard.rbegin(); it != indicesToDiscard.rend(); ++it) {
+            hand.erase(hand.begin() + *it);
+        }
+    }
 };
 
 bool pair_of_cards(const Card& card1, const Card& card2) {
@@ -62,30 +100,33 @@ int main_pikgame(sf::RenderWindow& windowss) {
 
 
     std::vector<std::string> suits = {"HEARTS", "DIAMONDS", "CLUBS", "SPADES"};
-        //основная колода 
+    // основная колода 
     std::vector<Card> deck;
     sf::Texture CardTexture;
     for (int value = 6; value <= 14; ++value) {
-        for (std::string suit : suits) {
+        for (const std::string& suit : suits) {
+            // Исключаем даму крести
+            if (value == 12 && suit == "CLUBS") {
+                continue; // Пропускаем добавление карты "Дама Пик"
+            }
             Card card;
             card.value = value;
             card.suit = suit;
             std::string filename = "resources/" + std::to_string(value) + suit + ".png";
             if (!CardTexture.loadFromFile(filename)) { 
                 std::cerr << "Ошибка загрузки текстуры: " << filename << std::endl; 
-            } else if(filename != "resources/12CLUBS") //исключаем даму крести
-            {
+            } else {
                 card.texture = CardTexture; 
                 card.sprite.setTexture(card.texture);
+                deck.push_back(card);
             }
-            deck.push_back(card);
         }
     }
 
     // Перемешивание колоды
-std::random_device rd;
-std::mt19937 g(rd());
-std::shuffle(deck.begin(), deck.end(), g);
+    std::random_device rd;
+    std::mt19937 g(rd());
+    std::shuffle(deck.begin(), deck.end(), g);
 
     std::vector<Player> Player(4);
     Player[0].isAttacker = true;
@@ -93,20 +134,41 @@ std::shuffle(deck.begin(), deck.end(), g);
     Player[1].isAttacker = false;
     Player[1].isDefender = false;
     Player[2].isAttacker = false;
-    Player[1].isDefender = false;
+    Player[2].isDefender = false;
     Player[3].isAttacker = false;
-    Player[1].isDefender = false;
-
+    Player[3].isDefender = false;
+    Bot& bot_1 = static_cast<Bot&>(Player[1]);
+    Bot& bot_2 = static_cast<Bot&>(Player[2]);
+    Bot& bot_3 = static_cast<Bot&>(Player[3]);
     //раздача карт на руки
     // for (int i = 0; i < 13; ++i) //для от 2
     for (int i = 0; i < 9; ++i)
     {
+        if (deck.empty()) {
+            std::cerr << "Колода пуста. Невозможно продолжить раздачу карт." << std::endl;
+            break; // Выход из цикла, если колода пуста
+        }
         Player[0].hand.push_back(deck.back());
         deck.pop_back();
+
+        if (deck.empty()) {
+            std::cerr << "Колода пуста. Невозможно продолжить раздачу карт." << std::endl;
+            break;
+        }
         Player[1].hand.push_back(deck.back());
         deck.pop_back();
+
+        if (deck.empty()) {
+            std::cerr << "Колода пуста. Невозможно продолжить раздачу карт." << std::endl;
+            break;
+        }
         Player[2].hand.push_back(deck.back());
         deck.pop_back();
+
+        if (deck.empty()) {
+            std::cerr << "Колода пуста. Невозможно продолжить раздачу карт." << std::endl;
+            break;
+        }
         Player[3].hand.push_back(deck.back());
         deck.pop_back();
     }
@@ -194,6 +256,8 @@ std::shuffle(deck.begin(), deck.end(), g);
     bool canSelectCards = true; // Можно ли выбирать карты
     bool canTakeCard = false; // Можно ли брать карту у противника
     bool cardTaken = false; // Флаг, указывающий на то, что карта была взята
+    int shift = 0; // Начальное значение смещения
+
     // Game Loop
     while (windowss.isOpen()) 
     {
@@ -207,7 +271,17 @@ std::shuffle(deck.begin(), deck.end(), g);
         {
             currentPlayerIndex = findCurrentPlayer(Player);
             int neighborIndex = (currentPlayerIndex + 1) % Player.size(); // Индекс соседа справа
+            // if (dynamic_cast<Bot*>(&Player[currentPlayerIndex]) != nullptr) 
+            // {
+            //     // Текущий игрок является ботом
+                
+            //     // Бот берет карту у игрока справа
+            //     bot.takeCardFromPlayer(Player[2]);
 
+            //     // Бот сбрасывает пары карт
+            //     bot.discardPairs();
+
+            // }
 
             switch (event.type)
             {
@@ -259,7 +333,7 @@ std::shuffle(deck.begin(), deck.end(), g);
                             cardTaken = true; // Установка флага взятия карты
                             selected_Card.clear(); // Очистка выбора карт
                         }
-                    }
+                     }
                     if (event.key.code == sf::Keyboard::Left)
                     {
                         if (showCardSelectionMessage || showMessageEscape) // Проверка, находимся ли мы в режиме выбора кнопки
@@ -415,6 +489,7 @@ std::shuffle(deck.begin(), deck.end(), g);
                             for (int i = 0; i < Player.size(); ++i) {
                                 Player[i].isAttacker = (i == currentPlayerIndex);
                             }
+                            shift = (shift + 1) % Player.size();
                         }
                     }
                     break;
@@ -427,6 +502,116 @@ std::shuffle(deck.begin(), deck.end(), g);
         windowss.clear(Color(50,200,150));
         windowss.draw(background);
 
+        // Отрисовка карт игроков
+
+        Texture back_card_texture;
+        if (!back_card_texture.loadFromFile("resources/back.png")) { return 1; }
+        RectangleShape back_card_sprite(Vector2f(77,110));
+        back_card_sprite.setTexture(&back_card_texture);
+            // Отрисовка карт для каждого игрока
+    for (int playerIndex = 0; playerIndex < Player.size(); ++playerIndex) {
+        // Определение позиции и поворота карт в зависимости от индекса игрока
+        // Vector2f position;
+        float rotation;
+        if (playerIndex == 0) { // Игрок снизу
+            rotation = 0;
+        } else if (playerIndex == 1) { // Игрок справа
+            rotation = 90;
+        } else if (playerIndex == 2) { // Игрок сверху
+            rotation = 0;
+        } else if (playerIndex == 3) { // Игрок слева
+            rotation = -90;
+        }
+
+        int id = 1; // Переменная для определения позиции карты в ряду
+
+        // Отрисовка карт текущего игрока
+        for (size_t cardIndex = 0; cardIndex < Player[playerIndex].hand.size(); ++cardIndex) {
+            Card& card = Player[playerIndex].hand[cardIndex];
+            if (Player[playerIndex].isAttacker) {
+                // Атакующий игрок видит значения своих карт
+                card.sprite.setTexture(card.texture);
+                // Определение позиции карты в зависимости от её индекса 
+                card.sprite.setPosition(Vector2f(200 + (1300 / Player[playerIndex].hand.size()) * id, 800));
+                // Если карта выбрана, она рисуется в желтый цвет
+                if (std::find(selected_Card.begin(), selected_Card.end(), cardIndex) != selected_Card.end())
+                {
+                    card.sprite.setColor(Color::Magenta);
+                }
+                else if (cardIndex == selectedCardIndex)
+                {
+                    card.sprite.setColor(Color::Yellow);
+                }
+                else
+                {
+                    card.sprite.setColor(Color::White);
+                }
+
+                windowss.draw(card.sprite);
+                ++id; 
+                
+            } else {
+                // У остальных игроков карты рубашкой вверх
+                back_card_sprite.setRotation(rotation);
+                if (playerIndex == 1) {
+                    back_card_sprite.setPosition(Vector2f(1820, 123 + (800 / Player[playerIndex].hand.size()) * id));
+                } else if (playerIndex == 2) {
+                    back_card_sprite.setPosition(Vector2f(200 + (1300 / Player[playerIndex].hand.size()) * id, 150));
+                } else if (playerIndex == 3) {
+                    back_card_sprite.setPosition(Vector2f(100, 200 + (800 / Player[playerIndex].hand.size()) * id));
+                }
+                windowss.draw(back_card_sprite);
+                id++;
+            }
+        }
+    }
+        // // Отрисовка карт для каждого игрока
+        // for (int playerIndex = 0; playerIndex < Player.size(); ++playerIndex) {
+        //     int id = 1; // Переменная для определения позиции карты в ряду
+        //     // int positionIndex = (playerIndex + shift ) % Player.size();
+        //     // Отрисовка карт текущего игрока
+        //     for (size_t cardIndex = 0; cardIndex < Player[playerIndex].hand.size(); ++cardIndex) {
+        //         Card& card = Player[playerIndex].hand[cardIndex];
+        //         if (Player[playerIndex].isAttacker) {
+        //             // Атакующий игрок видит значения своих карт
+        //             card.sprite.setTexture(card.texture);
+        //             // Определение позиции карты в зависимости от её индекса 
+        //             card.sprite.setPosition(Vector2f(200 + (1300 / Player[playerIndex].hand.size()) * id, 800));
+        //             // Если карта выбрана, она рисуется в желтый цвет
+        //             if (std::find(selected_Card.begin(), selected_Card.end(), cardIndex) != selected_Card.end())
+        //             {
+        //                 card.sprite.setColor(Color::Magenta);
+        //             }
+        //             else if (cardIndex == selectedCardIndex)
+        //             {
+        //                 card.sprite.setColor(Color::Yellow);
+        //             }
+        //             else
+        //             {
+        //                 card.sprite.setColor(Color::White);
+        //             }
+
+        //             windowss.draw(card.sprite);
+        //             // ++id; 
+                    
+        //         } 
+        //         // else {
+        //             // У остальных игроков карты рубашкой вверх
+        //             if (positionIndex == 1) {
+        //                 back_card_sprite.setRotation(90); // Поворот карты на 90 градусов
+        //                 back_card_sprite.setPosition(Vector2f(1820, 123 + (800 / Player[(playerIndex + 1) % Player.size()].hand.size()) * id));
+        //             } else if (positionIndex == 2) {
+        //                 back_card_sprite.setRotation(0); // Поворот карты на 0 градусов
+        //                 back_card_sprite.setPosition(Vector2f(200 + (1300 / Player[(playerIndex + 2) % Player.size()].hand.size()) * id, 150));
+        //             } else if (positionIndex == 3) {
+        //                 back_card_sprite.setRotation(-90); // Поворот карты на 90 градусов
+        //                 back_card_sprite.setPosition(Vector2f(100, 200 + (800 / Player[(playerIndex + 3) % Player.size()].hand.size()) * id));
+        //             }
+        //             windowss.draw(back_card_sprite);
+        //             id++;
+        //         // }
+        //     }
+        // }
         // // отрисовка карт
         // int id_P1 = 1; 
         // for (size_t i = 0; i < Player[0].hand.size(); ++i)
@@ -454,68 +639,6 @@ std::shuffle(deck.begin(), deck.end(), g);
         //     windowss.draw(card.sprite);
         //     ++id_P1; 
         // }   
-        Texture back_card_texture;
-        if (!back_card_texture.loadFromFile("resources/back.png")) { return 1; }
-        RectangleShape back_card_sprite(Vector2f(77,110));
-        back_card_sprite.setTexture(&back_card_texture);
-
-        // Отрисовка карт для каждого игрока
-        for (int playerIndex = 0; playerIndex < Player.size(); ++playerIndex) {
-            // Определение позиции и поворота карт в зависимости от индекса игрока
-            // Vector2f position;
-            float rotation;
-            if (playerIndex == 0) { // Игрок снизу
-                rotation = 0;
-            } else if (playerIndex == 1) { // Игрок справа
-                rotation = 90;
-            } else if (playerIndex == 2) { // Игрок сверху
-                rotation = 0;
-            } else if (playerIndex == 3) { // Игрок слева
-                rotation = -90;
-            }
-
-            int id = 1; // Переменная для определения позиции карты в ряду
-
-            // Отрисовка карт текущего игрока
-            for (size_t cardIndex = 0; cardIndex < Player[playerIndex].hand.size(); ++cardIndex) {
-                Card& card = Player[playerIndex].hand[cardIndex];
-                if (Player[playerIndex].isAttacker) {
-                    // Атакующий игрок видит значения своих карт
-                    card.sprite.setTexture(card.texture);
-                    // Определение позиции карты в зависимости от её индекса 
-                    card.sprite.setPosition(Vector2f(200 + (1300 / Player[playerIndex].hand.size()) * id, 800));
-                    // Если карта выбрана, она рисуется в желтый цвет
-                    if (std::find(selected_Card.begin(), selected_Card.end(), cardIndex) != selected_Card.end())
-                    {
-                        card.sprite.setColor(Color::Magenta);
-                    }
-                    else if (cardIndex == selectedCardIndex)
-                    {
-                        card.sprite.setColor(Color::Yellow);
-                    }
-                    else
-                    {
-                        card.sprite.setColor(Color::White);
-                    }
-
-                    windowss.draw(card.sprite);
-                    ++id; 
-                    
-                } else {
-                    // У остальных игроков карты рубашкой вверх
-                    back_card_sprite.setRotation(rotation);
-                    if (playerIndex == 1) {
-                        back_card_sprite.setPosition(Vector2f(1820, 123 + (800 / Player[playerIndex].hand.size()) * id));
-                    } else if (playerIndex == 2) {
-                        back_card_sprite.setPosition(Vector2f(200 + (1300 / Player[playerIndex].hand.size()) * id, 150));
-                    } else if (playerIndex == 3) {
-                        back_card_sprite.setPosition(Vector2f(100, 200 + (800 / Player[playerIndex].hand.size()) * id));
-                    }
-                    windowss.draw(back_card_sprite);
-                    id++;
-                }
-            }
-        }
         // // Отрисовка карт игрока 1 (справа)
         // int  id_P2 = 1;
         // for (Card& card : Player[1].hand) {

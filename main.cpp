@@ -98,7 +98,6 @@ void About_Game()
 
 int main() 
 {
-    setlocale(LC_ALL, "Russian");
     // Инициализация окна SFML
     sf::RenderWindow window(sf::VideoMode::getDesktopMode(),  L"Карточные игры", Style::Fullscreen);
     
