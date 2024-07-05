@@ -1,64 +1,46 @@
+#pragma once
+#include <stdio.h>
 #include <SFML/Graphics.hpp>
 #include <iostream>
-#include <string>
 #include <vector>
+#include <ctime>
 #include <algorithm>
+#include <set>
 #include <random>
-#include <chrono>
-// const int CARD_WIDTH = 71; 
-// const int CARD_HEIGHT = 96; 
-// const int WINDOW_WIDTH = 800; 
-// const int WINDOW_HEIGHT = 600; 
-// const int NUM_PLAYERS = 2;
-// const int CARDS_PER_PLAYER = 36/NUM_PLAYERS;
-// Класс карты
+using namespace sf;
+// Класс для представления карты
 class Card {
-private:
+public:
     int value; // Значение карты (6-14)
-    std::string suit; // Масть карты
-    sf::Texture* texture; // Текстура карты
-public:
-    // Конструктор по умолчанию (создание "пустой" карты)
-    Card();
-    // Конструктор с параметрами
-    Card(int value, const std::string& suit, sf::Texture* texture);
-    // Метод для отрисовки карты
-    void draw(sf::RenderWindow& window, sf::Vector2f position);
-    // Получение значения карты
-    int getValue();
-    // Получение масти карты
-    const std::string& getSuit();
-    // Получение текстуры карты
-    sf::Texture* getTexture();
-    // Определение оператора сравнения
-    bool operator==(const Card& other);
+    std::string suit; // Масть карты (HEARTS, DIAMONDS, CLUBS, SPADES)
+    Texture texture; // Текстура карты
+    Sprite sprite; // Спрайт карты
+    // Конструктор карты
+    Card(int val, const std::string& s);
 };
-// Класс игрока
+// Класс для представления игрока
 class Player {
-private:
-    std::string name; // Имя игрока
-    std::vector<Card> hand; // Рука игрока
-    sf::Vector2f handPosition; // Позиция руки игрока на экране
 public:
-    // Конструктор по умолчанию
+    std::vector<Card> hand; // Рука игрока
+    bool isAttacker; // Является ли игрок атакующим
+    bool isDefender; // Является ли игрок защищающимся
+    bool isTaking; // Взял ли игрок карты из колоды
+    bool cardSelected; // Выбрал ли игрок карту для атаки/защиты
+    // Конструктор игрока
     Player();
-    // Конструктор с параметрами
-    Player(const std::string& name, sf::Vector2f handPosition);
-    // Метод для взятия карт из колоды
-    void takeCards(std::vector<Card>& deck, int numCards);
-    // Метод для атаки
-    Card attack(std::vector<Card>& table, sf::Vector2f mousePosition, Player& targetPlayer);
-    // Метод для защиты
-    Card defend(std::vector<Card>& attack_cards, sf::Vector2f mousePosition, Card trump);
-    // Получение имени игрока
-    const std::string& getName();
-    // Получение руки игрока
-    const std::vector<Card>& getHand();
-    // Получение позиции руки игрока на экране
-    sf::Vector2f getHandPosition();
-    // Удаление карты из руки
-    void removeCard(Card card);
 };
-// Функция для определения первого хода
-int determineFirstTurn(std::vector<Player>& players, Card trump);
-int main_durak(sf::RenderWindow& window);
+// Функция для определения индекса текущего атакующего игрока
+int findCurrentPlayer(std::vector<Player>& players);
+// Функция для сортировки карт в руке игрока по значению
+void sortHand(std::vector<Card>& hand);
+// Функция для проверки на атаку
+bool attack(std::vector<Card>& table, Card& attackCard);
+// Функция для проверки на защиту
+bool defense(Card& attackCard, Card& defenseCard, Card& trump);
+// Функция для определения, кто первый ходит
+int whoFirst (std::vector<Player>& players, Card& trump);
+// Функция, которая проверяет, закончилась ли игра
+bool isOver (std::vector<Card>& deck, std::vector<Player>& players);
+// Функция, которая проверяет, надо ли брать карты
+bool takingCards (std::vector<Player>& players);
+int main_durakgame(sf::RenderWindow& windowss);

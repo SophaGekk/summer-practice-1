@@ -1,418 +1,748 @@
+#include <stdio.h>
 #include <SFML/Graphics.hpp>
 #include <iostream>
-#include <string>
 #include <vector>
+#include <ctime>
 #include <algorithm>
+#include <set>
 #include <random>
-#include <chrono>
-const int CARD_WIDTH = 71; 
-const int CARD_HEIGHT = 96; 
-const int WINDOW_WIDTH = 800; 
-const int WINDOW_HEIGHT = 600; 
-const int NUM_PLAYERS = 2;
-const int CARDS_PER_PLAYER = 36/NUM_PLAYERS;
-// Вектор для мастей карт
-std::vector<std::string> suits = {"HEARTS", "SPADES", "CLUBS", "DIAMONDS"};
-// Класс карты
-class Card {
-private:
+using namespace sf;
+// Класс для представления карты
+class cards {
+public:
     int value; // Значение карты (6-14)
-    std::string suit; // Масть карты
-    sf::Texture* texture; // Текстура карты
-public:
-    // Конструктор по умолчанию (создание "пустой" карты)
-    Card() : value(0), suit(""), texture(nullptr) {}
-    // Конструктор с параметрами
-    Card(int value, const std::string& suit, sf::Texture* texture) : value(value), suit(suit), texture(texture) {}
-    // Метод для отрисовки карты
-    void draw(sf::RenderWindow& window, sf::Vector2f position) {
-        sf::Sprite sprite;
-        sprite.setTexture(*texture);
-        sprite.setPosition(position);
-        window.draw(sprite);
-    }
-    // Получение значения карты
-    int getValue() const { return value; }
-    // Получение масти карты
-    const std::string& getSuit() const { return suit; }
-    // Получение текстуры карты
-    sf::Texture* getTexture() const { return texture; }
-    // Определение оператора сравнения
-    bool operator==(const Card& other) const {
-        return value == other.value && suit == other.suit;
-    }
+    std::string suit; // Масть карты (HEARTS, DIAMONDS, CLUBS, SPADES)
+    Texture texture; // Текстура карты
+    Sprite sprite; // Спрайт карты
+    // Конструктор карты
+    // cards(int val, const std::string& s) : value(val), suit(s) {
+    //     // Загружаем текстуру карты
+    //     std::string filename = "resources/" + std::to_string(value) + s + ".png"; 
+    //     if (!texture.loadFromFile(filename)) {
+    //         std::cerr << "Ошибка загрузки текстуры: " << filename << std::endl;
+    //     } else {
+    //         sprite.setTexture(texture);
+    //     }
+    // }
 };
-// Класс игрока
+// Класс для представления игрока
 class Player {
-private:
-    std::string name; // Имя игрока
-    std::vector<Card> hand; // Рука игрока
-    sf::Vector2f handPosition; // Позиция руки игрока на экране
 public:
-    // Конструктор по умолчанию
-    Player() : name(""), hand(), handPosition(0, 0) {}
-    // Конструктор с параметрами
-    Player(const std::string& name, sf::Vector2f handPosition) : name(name), hand(), handPosition(handPosition) {}
-    // Метод для взятия карт из колоды
-    void takeCards(std::vector<Card>& deck, int numCards) {
-        for (int i = 0; i < numCards; ++i) {
-            if (!deck.empty()) {
-                hand.push_back(deck.back());
-                deck.pop_back();
-            }
-        }
-    }
-    // Метод для атаки
-    Card attack(std::vector<Card>& table, sf::Vector2f mousePosition, Player& targetPlayer) {
-        // Проверка на возможность атаки
-        if (!hand.empty()) {
-            // Проверка, была ли нажата кнопка "пас" (предполагается, что кнопка находится в определенной позиции на экране)
-            if (mousePosition.x >= 500 && mousePosition.x <= 600 && mousePosition.y >= 500 && mousePosition.y <= 550) {
-                std::cout << "Пас" << std::endl;
-                return Card(); // Возвращает пустую карту (пас)
-            }
-            // Если стол пустой, можно кинуть любую карту
-            if (table.empty()) {
-                for (int i = 0; i < hand.size(); ++i) {
-                    // Проверка, была ли нажата карта
-                    if (hand[i].getTexture() && mousePosition.x >= hand[i].getTexture()->getSize().x * i &&
-                        mousePosition.x < hand[i].getTexture()->getSize().x * (i + 1) &&
-                        mousePosition.y >= 0 && mousePosition.y < hand[i].getTexture()->getSize().y) {
-                        // Возвращение выбранной карты
-                        return hand[i];
-                    }
-                }
-            }
-            // Если на столе есть карты, нужно кинуть карту того же значения
-            else {
-                for (int i = 0; i < hand.size(); ++i) {
-                    // Проверка, была ли нажата карта
-                    if (hand[i].getTexture() && mousePosition.x >= hand[i].getTexture()->getSize().x * i &&
-                        mousePosition.x < hand[i].getTexture()->getSize().x * (i + 1) &&
-                        mousePosition.y >= 0 && mousePosition.y < hand[i].getTexture()->getSize().y) {
-                        // Проверка, есть ли на столе карта с таким же значением
-                        for (int j = 0; j < table.size(); ++j) {
-                            if (hand[i].getValue() == table[j].getValue()) {
-                                // Возвращение выбранной карты
-                                return hand[i];
-                            }
-                        }
-                    }
-                }
-            }
-        } 
-        else {
-            // Невозможно атаковать (нет карт в руке)
-            std::cout << "У вас закончились карты." << std::endl;
-            return Card(); // Возвращает пустую карту
-        }
-        // Карта не была выбрана
-        std::cout << "Не выбрана карта. Попробуйте еще раз." << std::endl;
-        return Card(); // Возвращает пустую карту
-    }
-    // Метод для защиты
-    Card defend(std::vector<Card>& attack_cards, sf::Vector2f mousePosition, Card trump) {
-        // Проверка, была ли нажата кнопка "Забрать карты" (предполагается, что кнопка находится в определенной позиции на экране)
-        if (mousePosition.x >= 500 && mousePosition.x <= 600 && mousePosition.y >= 500 && mousePosition.y <= 550) {
-            std::cout << "Забрать карты" << std::endl;
-            return Card(); // Возвращает пустую карту (забрать карты)
-        }
-        // Проверка, была ли нажата карта в руке
-        if (!hand.empty()) {
-            for (int i = 0; i < hand.size(); ++i) {
-                if (hand[i].getTexture() && mousePosition.x >= hand[i].getTexture()->getSize().x * i &&
-                    mousePosition.x < hand[i].getTexture()->getSize().x * (i + 1) &&
-                    mousePosition.y >= 0 && mousePosition.y < hand[i].getTexture()->getSize().y) {
-                    // Сохраняем выбранную карту из руки
-                    Card selectedCardFromHand = hand[i];
-                    // Проверка, была ли нажата карта в attack_cards
-                    if (!attack_cards.empty()) {
-                        for (int j = 0; j < attack_cards.size(); ++j) {
-                            if (attack_cards[j].getTexture() && mousePosition.x >= attack_cards[j].getTexture()->getSize().x * j &&
-                                mousePosition.x < attack_cards[j].getTexture()->getSize().x * (j + 1) &&
-                                mousePosition.y >= 0 && mousePosition.y < attack_cards[j].getTexture()->getSize().y) {
-                                // Проверка, можно ли защищаться (сравнение значений)
-                                if (((selectedCardFromHand.getValue() > attack_cards[j].getValue()) && (selectedCardFromHand.getSuit()==attack_cards[j].getSuit())) ||
-                                    ((selectedCardFromHand.getSuit()==trump.getSuit()) && attack_cards[j].getSuit()!=trump.getSuit()) ||
-                                    ((selectedCardFromHand.getSuit()==trump.getSuit()) && (attack_cards[j].getSuit()==trump.getSuit()) && (selectedCardFromHand.getValue() > attack_cards[j].getValue()))) { 
-                                    // Возвращение выбранной карты
-                                    return selectedCardFromHand;
-                                } 
-                                else {
-                                    // Невозможно защищаться этой картой
-                                    std::cout << "Невозможно защищаться этой картой. Попробуйте еще раз." << std::endl;
-                                    return Card(); // Возвращает пустую карту
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        // Карта не была выбрана
-        std::cout << "Не выбрана карта. Попробуйте еще раз." << std::endl;
-        return Card(); // Возвращает пустую карту
-    }
-    // Получение имени игрока
-    const std::string& getName() const { return name; }
-    // Получение руки игрока
-    const std::vector<Card>& getHand() const { return hand; }
-    // Получение позиции руки игрока на экране
-    sf::Vector2f getHandPosition() const { return handPosition; }
-    // Удаление карты из руки
-    void removeCard(Card card) {
-        hand.erase(std::remove(hand.begin(), hand.end(), card), hand.end());
-    }
+    std::vector<cards> hand; // Рука игрока
+    bool isAttacker; // Является ли игрок атакующим
+    bool isDefender; // Является ли игрок защищающимся
+    bool isTaking; // Взял ли игрок карты из колоды
+    bool cardsSelected; // Выбрал ли игрок карту для атаки/защиты
+    // Конструктор игрока
+    Player() : isAttacker(false), isDefender(false), isTaking(false), cardsSelected(false) {}
 };
-// Функция для определения первого хода
-int determineFirstTurn(std::vector<Player>& players, Card trump) {
-    // 1) Если хотя бы у одного игрока есть козырная карта в руках
-    bool hasTrump = false;
-    for (int i = 0; i < players.size(); ++i) {
-        for (const Card& card : players[i].getHand()) {
-            if (card.getSuit() == trump.getSuit()) {
-                hasTrump = true;
-                break;
-            }
-        }
-        if (hasTrump) break;
-    }
-    if (hasTrump) {
-        // Найдем игрока с наименьшим значением козыря
-        int minTrumpValue = 15; // Инициализируем значение больше максимально возможного
-        int minTrumpPlayerIndex = -1;
-        for (int i = 0; i < players.size(); ++i) {
-            for (const Card& card : players[i].getHand()) {
-                if (card.getSuit() == trump.getSuit() && card.getValue() < minTrumpValue) {
-                    minTrumpValue = card.getValue();
-                    minTrumpPlayerIndex = i;
-                }
-            }
-        }
-        return minTrumpPlayerIndex;
-    } 
-    else {
-        // 2) Если козырной карты нет ни у одного игрока в руках
-        // Найдем игрока с наименьшим значением карты
-        int minValue = 15; // Инициализируем значение больше максимально возможного
-        std::vector<int> minPlayersIndices;
-        for (int i = 0; i < players.size(); ++i) {
-            for (const Card& card : players[i].getHand()) {
-                if (card.getValue() < minValue) {
-                    minValue = card.getValue();
-                    minPlayersIndices.clear(); // Очищаем вектор, так как нашли новое минимальное значение
-                    minPlayersIndices.push_back(i);
-                } 
-                else if (card.getValue() == minValue) {
-                    minPlayersIndices.push_back(i);
-                }
-            }
-        }
-        // Если игроков с минимальным значением несколько, выбираем случайного
-        if (minPlayersIndices.size() > 1) {
-            std::random_device rd;
-            std::mt19937 g(rd());
-            std::uniform_int_distribution<> distrib(0, minPlayersIndices.size() - 1);
-            return minPlayersIndices[distrib(g)];
-        } 
-        else {
-            return minPlayersIndices[0];
+// Функция для определения индекса текущего атакующего игрока
+int findCurrentPlayer(std::vector<Player>& players)
+{
+    for (int i = 0; i < players.size(); ++i)
+    {
+        if (players[i].isAttacker)
+        {
+            return i; // Возвращает индекс текущего атакующего игрока
         }
     }
+    return -1; // Если атакующий игрок не найден
 }
-int main_durak(sf::RenderWindow& window) {
-    // Инициализация SFML
-    // sf::RenderWindow window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Подкидной Дурак");
-    // Создание игроков
-    Player player1("Игрок 1", sf::Vector2f(50, WINDOW_HEIGHT - CARD_HEIGHT));
-    Player player2("Игрок 2", sf::Vector2f(WINDOW_WIDTH - CARD_WIDTH * 6 - 50, WINDOW_HEIGHT - CARD_HEIGHT));
-    // Добавление игроков в вектор
-    std::vector<Player> players;
-    players.push_back(player1);
-    players.push_back(player2);
-    // Создание колоды карт
-    std::vector<Card> deck;
-    for (int value = 6; value <= 14; ++value) {
-        for (const std::string& suit : suits) { 
-            // Загрузка текстуры карты
-            sf::Texture cardTexture;
-            if (cardTexture.loadFromFile("resources/" + std::to_string(value) + suit + ".png")) {
-                deck.push_back(Card(value, suit, &cardTexture));
+// Функция для сортировки карт в руке игрока по значению
+void sortHand(std::vector<cards>& hand) {
+    std::sort(hand.begin(), hand.end(), [](const cards& a, const cards& b) {
+        return a.value < b.value;
+    });
+}
+// Функция для проверки на атаку
+bool attack(std::vector<cards>& table, cards& attackcards) {
+    if (!table.empty()) {
+        for (int i = 0; i < table.size(); ++i) {
+            if (attackcards.value == table[i].value) {
+                return true;
+            }
+        }
+    } 
+    return false;
+}
+// Функция для проверки на защиту
+bool defense(cards& attackcards, cards& defensecards, cards& trump) {
+    if (((defensecards.value > attackcards.value) && (defensecards.suit == attackcards.suit)) || ((defensecards.suit == trump.suit) && (defensecards.suit != trump.suit))) {
+        return true;
+    }
+    return false;
+}
+// Функция для определения, кто первый ходит
+int whoFirst (std::vector<Player>& players, cards& trump) {
+    // Словарь для хранения минимального козыря и значения для каждого игрока
+    std::map<int, std::pair<int, int>> playerData;
+    // Проход по всем игрокам
+    for (int i = 0; i < players.size(); ++i) {
+        int minTrump = 15;  // Максимальное значение козыря
+        int minValue = 15; // Максимальное значение карты
+        for (const cards& cards : players[i].hand) {
+            if (cards.suit == trump.suit) {
+                minTrump = std::min(minTrump, cards.value);
+            }
+            minValue = std::min(minValue, cards.value);
+        }
+        // Сохранение данных в словарь
+        playerData[i] = std::make_pair(minTrump, minValue);
+    }
+    // Определение первого игрока
+    int firstPlayerIndex = 0;
+    int minTrump = playerData[0].first;
+    int minValue = playerData[0].second;
+    for (int i = 1; i < players.size(); ++i) {
+        if (playerData[i].first < minTrump) {
+            minTrump = playerData[i].first;
+            firstPlayerIndex = i;
+        } else if (playerData[i].first == minTrump && playerData[i].second < minValue) {
+            minValue = playerData[i].second;
+            firstPlayerIndex = i;
+        }
+    }
+    return firstPlayerIndex;
+}
+// Функция, которая проверяет, закончилась ли игра
+bool isOver (std::vector<cards>& deck, std::vector<Player>& players) {
+    int count = 0;
+    for (const Player& player: players) {
+        if (player.hand.empty()) {
+            count++;
+        }
+    }
+    if (deck.empty() && (count <= 3)) {
+        return true;
+    }
+    return false;
+}
+// Функция, которая проверяет, надо ли брать карты
+bool takingcardss (std::vector<Player>& players) {
+    for (const Player player: players) {
+        if (player.isTaking == false) {
+            return false;
+        }
+    }
+    return true;
+}
+// Глобальная переменная для индекса текущего игрока
+int currentPlayerIndexs = 0;
+int main_durakgame(sf::RenderWindow& windowss) {
+    srand(time(0));
+    // Загрузка текстуры стола
+    Texture tableTexture;
+    if (!tableTexture.loadFromFile("resources/table.png")) {
+        std::cerr << "Ошибка загрузки текстуры стола: " << "resources/table.png" << std::endl;
+        return 1; 
+    }
+    // Создание спрайта стола
+    RectangleShape background(Vector2f(1920,1080));
+    background.setTexture(&tableTexture);
+    background.setPosition(Vector2f(0,0));
+    // Масти карт
+    std::vector<std::string> suits = {"HEARTS", "DIAMONDS", "CLUBS", "SPADES"};
+     // Создание колоды карт 
+    std::vector<cards> deck;
+    sf::Texture cardsTexture;
+     for (int value = 6; value <= 14; ++value) {
+        for (const std::string& suit : suits) {
+            // Исключаем даму крести
+            if (value == 12 && suit == "CLUBS") {
+                continue; // Пропускаем добавление карты "Дама Пик"
+            }
+            cards cards;
+            cards.value = value;
+            cards.suit = suit;
+            std::string filename = "resources/" + std::to_string(value) + suit + ".png";
+            if (!cardsTexture.loadFromFile(filename)) { 
+                std::cerr << "Ошибка загрузки текстуры: " << filename << std::endl; 
+            } else {
+                cards.texture = cardsTexture; 
+                cards.sprite.setTexture(cards.texture);
+                deck.push_back(cards);
             }
         }
     }
+    // for (int value = 6; value <= 14; ++value) {
+    //     for (const std::string& suit : suits) {
+    //         deck.push_back(cards(value, suit));
+    //     }
+    // }
     // Перемешивание колоды
     std::random_device rd;
     std::mt19937 g(rd());
     std::shuffle(deck.begin(), deck.end(), g);
-    // Раздача карт
-    for (int i = 0; i < NUM_PLAYERS; ++i) {
-        players[i].takeCards(deck, CARDS_PER_PLAYER);
-    }
     // Выбор козыря
-    Card trump = deck.back();
+    cards trump = deck.back();
     deck.pop_back();
     // Возврат козыря в начало колоды
     deck.insert(deck.begin(), trump);
-    // Кнопки "пас" и "забрать карты"
-    sf::RectangleShape passButton(sf::Vector2f(100, 50));
-    passButton.setFillColor(sf::Color(0, 128, 0));
-    passButton.setPosition(500, 500);
-    sf::Text passButtonText("Пас", sf::Font(), 20);
-    passButtonText.setFillColor(sf::Color::White);
-    passButtonText.setPosition(520, 515);
-    sf::RectangleShape takeButton(sf::Vector2f(100, 50));
-    takeButton.setFillColor(sf::Color(0, 128, 0));
-    takeButton.setPosition(500, 500);
-    sf::Text takeButtonText("Забрать", sf::Font(), 20);
-    takeButtonText.setFillColor(sf::Color::White);
-    takeButtonText.setPosition(510, 515);
-    // Основной цикл игры
-    int currentPlayerIndex = determineFirstTurn(players, trump); // Определяем первого игрока
-    std::vector<Card> table; // Стол
-    std::vector<Card> attack_cards; // Карты атакующих
-    std::vector<Card> defend_cards; // Карты защищающегося
-    bool isAttacking = true; // Флаг, определяющий, атакует игрок или защищается
-    bool isGameOver = false;
-    while (window.isOpen()) {
+    // Создание игроков
+    std::vector<Player> players(4);
+    players[0].isAttacker = true;
+    players[0].isDefender = false;
+    players[1].isAttacker = false;
+    players[1].isDefender = false;
+    players[2].isAttacker = false;
+    players[2].isDefender = false;
+    players[3].isAttacker = false;
+    players[3].isDefender = false;
+    // Раздача карт
+    int cardssPerPlayer = 6;
+    for (int i = 0; i < cardssPerPlayer; ++i)
+    {
+        for (int j = 0; j < players.size(); ++j)
+        {
+            if (!deck.empty()) {
+                players[j].hand.push_back(deck.back());
+                players[j].isTaking = true;
+                deck.pop_back();
+            }
+        }
+    }
+    // Сортировка карт в руках игроков
+    for (Player& player : players) {
+        sortHand(player.hand);
+    }
+    sf::Font font_1;
+    if (!font_1.loadFromFile("resources/ffont.ttf"))
+    {
+        std::cerr << "Ошибка загрузки шрифта!" << std::endl;
+    }
+    int selectedcardsIndex = 0;
+    int selectedcardsIndexRight = 0;
+    // Сообщения о возможности атаковать, выход
+    sf::Text message_can_attack;
+    message_can_attack.setFont(font_1);
+    message_can_attack.setCharacterSize(24);
+    message_can_attack.setFillColor(sf::Color::White);
+    message_can_attack.setPosition(100.f, 100.f);
+    message_can_attack.setString(L"Cannot attack with this cards");
+    sf::Text message_can_defend;
+    message_can_defend.setFont(font_1);
+    message_can_defend.setCharacterSize(24);
+    message_can_defend.setFillColor(sf::Color::White);
+    message_can_defend.setPosition(100.f, 100.f);
+    message_can_defend.setString(L"Cannot defend with this cards");
+    sf::Text message_escape;
+    message_escape.setFont(font_1);
+    message_escape.setCharacterSize(24);
+    message_escape.setFillColor(sf::Color::White);
+    message_escape.setPosition(100.f, 100.f);
+    message_escape.setString(L"Do you really want to get out?");
+    sf::Text message;
+    message.setFont(font_1);
+    message.setCharacterSize(30);
+    message.setFillColor(sf::Color::White);
+    message.setPosition(100.f, 100.f);
+    // Кнопки "Да" и "Нет"
+    sf::Text buttonYes;
+    buttonYes.setFont(font_1);
+    buttonYes.setString("Yes");
+    buttonYes.setCharacterSize(24);
+    buttonYes.setFillColor(sf::Color::White);
+    buttonYes.setPosition(200.f, 200.f);
+    sf::Text buttonNo;
+    buttonNo.setFont(font_1);
+    buttonNo.setString("No");
+    buttonNo.setCharacterSize(24);
+    buttonNo.setFillColor(sf::Color::White);
+    buttonNo.setPosition(400.f, 200.f);
+    // Кнопки "Пас" и "Бито"
+    sf::Text button_pass;
+    button_pass.setFont(font_1);
+    button_pass.setString("Pass");
+    button_pass.setCharacterSize(24);
+    button_pass.setFillColor(sf::Color::White);
+    button_pass.setPosition(200.f, 200.f);
+    sf::Text button_bito;
+    button_bito.setFont(font_1);
+    button_bito.setString("Bito");
+    button_bito.setCharacterSize(24);
+    button_bito.setFillColor(sf::Color::White);
+    button_bito.setPosition(400.f, 200.f);
+    // Индекс выбранной кнопки (0 - Да, 1 - Нет)
+    int selectedButtonIndex = 0;
+    // Флаги для управления игрой
+    bool showcardsSelectionMessage = true; // Флаг для отображения текста выбора карт
+    bool showMessageEscape = false; // Флаг для отображения текста выхода из игры
+    bool returnToMenu = false; // Флаг для отображения текста выхода в меню
+    bool showMessageWait = false; // Флаг для отображения текста ожидания игроков
+    bool showMessage = false; // Флаг для отображения сообщения
+    bool showInvalidMove = false; // Флаг для отображения сообщения о неправильном выборе карты для атаки/защиты
+    bool showTakecardsMessage = false; // Флаг для отображения сообщения о взятии карты
+    bool can_attack = true; // Можно ли атаковать
+    bool can_defend = false; // Можно ли защищаться
+    int playersChoseNo = 0; // Переменная для отслеживания количества игроков, выбравших "нет"
+    // Код для отображения сообщения "Ожидаем других игроков: количество"
+    sf::Text wait_message;
+    wait_message.setFont(font_1);
+    wait_message.setCharacterSize(30);
+    wait_message.setFillColor(sf::Color::White);
+    wait_message.setPosition(100.f, 100.f);
+    int shift = 0; // Начальное значение смещения
+    // Game Loop
+    int countMove = 1;
+    bool cardsTaken = false;
+    std::vector<cards> table; 
+    std::vector<cards> attackcardss;
+    std::vector<int> selected_cards;
+    while (windowss.isOpen()) 
+    {
+        if(returnToMenu)
+        {
+            return 0;
+            break;
+        }
         sf::Event event;
-        while (window.pollEvent(event)) {
-            if (event.type == sf::Event::Closed) {
-                window.close();
-            }
-            if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
-                sf::Vector2f mousePosition = (sf::Vector2f)sf::Mouse::getPosition(window);
-                if (isGameOver) { // Обработка клика после окончания игры
-                    if (mousePosition.x >= 500 && mousePosition.x <= 600 && mousePosition.y >= 500 && mousePosition.y <= 550) {
-                        // Начать новую игру
-                        isGameOver = false;
-                        // Перезапускаем игру
-                        // ... (Инициализируем переменные игры, как в начале программы)
-                    }
-                } 
-                else { // Обработка клика во время игры
-                    if (isAttacking) { // Атака
-                        // Card selectedCard = players[currentPlayerIndex].attack(table, mousePosition, players[(currentPlayerIndex + 1) % NUM_PLAYERS], trump);
-                        Card selectedCard = players[currentPlayerIndex].attack(table, mousePosition, players[(currentPlayerIndex + 1) % NUM_PLAYERS]);
-                        if (selectedCard.getTexture()) {
-                            attack_cards.push_back(selectedCard);
-                            players[currentPlayerIndex].removeCard(selectedCard);
-                            // Смена хода
-                            currentPlayerIndex = (currentPlayerIndex + 1) % NUM_PLAYERS;
+        while (windowss.pollEvent(event))
+        {
+            // Определение текущего игрока
+            if (countMove == 1) {
+                currentPlayerIndexs = whoFirst(players,trump);
+            } else {currentPlayerIndexs = findCurrentPlayer(players);}
+            int neighborIndex = (currentPlayerIndexs + 1) % players.size(); // Индекс соседа справа
+            switch (event.type)
+            {
+                case sf::Event::Closed:
+                    windowss.close();
+                    break;
+                case sf::Event::KeyPressed:
+                    // Проверка надо ли брать карты
+                    if (takingcardss(players) == false) {
+                        for (int j = 0; j < players.size(); ++j)
+                        {
+                            while (!deck.empty() && players[j].hand.size() < 6) {
+                                players[j].hand.push_back(deck.back());
+                                players[j].isTaking = true;
+                                deck.pop_back();
+                            }
                         }
+                    }
+                    if (event.key.code == Keyboard::Escape)
+                    {
+                        showMessageEscape = true;
+                        showcardsSelectionMessage = false;
+                    }
+                    // Выбор карты
+                    if(event.key.code == sf::Keyboard::Left)
+                    {                        
+                        if (selectedcardsIndex > 0)
+                        {
+                            --selectedcardsIndex;
+                        } else {
+                            selectedcardsIndex = players[currentPlayerIndexs].hand.size() - 1;
+                        }
+                    }
+                    else if(event.key.code == sf::Keyboard::Right)
+                    {
+                        // Переход к предыдущей карте с круговым циклом
+                        if (selectedcardsIndex < players[currentPlayerIndexs].hand.size() - 1)
+                        {
+                            ++selectedcardsIndex;
+                        } else {
+                            selectedcardsIndex = 0;
+                        }
+                    }
+                    // Выбор карты для атаки/защиты
+                    else if (event.key.code == sf::Keyboard::Enter && !table.empty() && !cardsTaken)
+                    {
+                        if (can_attack && !players[currentPlayerIndexs].cardsSelected) 
+                        {
+                            // Атака
+                            if (attack(table, players[currentPlayerIndexs].hand[selectedcardsIndex])) {
+                                attackcardss.push_back(players[currentPlayerIndexs].hand[selectedcardsIndex]);
+                                table.push_back(players[currentPlayerIndexs].hand[selectedcardsIndex]);
+                                players[currentPlayerIndexs].hand.erase(players[currentPlayerIndexs].hand.begin() + selectedcardsIndex);
+                                can_attack = false;
+                                can_defend = true;
+                                showcardsSelectionMessage = false;
+                                showMessage = false;
+                                showInvalidMove = false;
+                                showMessageWait = true;
+                                playersChoseNo = 0;
+                                cardsTaken = true;
+                            } else {
+                                showInvalidMove = true;
+                                showcardsSelectionMessage = true;
+                            }
+                        } 
+                        else if (can_defend && !players[currentPlayerIndexs].cardsSelected) 
+                        {
+                            // Защита
+                            if (defense(attackcardss.back(), players[currentPlayerIndexs].hand[selectedcardsIndex], trump)) {
+                                table.push_back(players[currentPlayerIndexs].hand[selectedcardsIndex]);
+                                players[currentPlayerIndexs].hand.erase(players[currentPlayerIndexs].hand.begin() + selectedcardsIndex);
+                                players[neighborIndex].isDefender = false;
+                                players[currentPlayerIndexs].isDefender = true;
+                                players[currentPlayerIndexs].isAttacker = true;
+                                can_attack = true;
+                                can_defend = false;
+                                showcardsSelectionMessage = false;
+                                showMessage = false;
+                                showInvalidMove = false;
+                                showMessageWait = true;
+                                playersChoseNo = 0;
+                                cardsTaken = true;
+                            } else {
+                                showInvalidMove = true;
+                                showcardsSelectionMessage = true;
+                            }
+                        }
+                    }
+                    // Взятие карты, если колода не пуста
+                    else if (event.key.code == sf::Keyboard::Enter && cardsTaken && !deck.empty())
+                    {
+                        players[currentPlayerIndexs].hand.push_back(deck.back());
+                        deck.pop_back();
+                        cardsTaken = false;
+                        can_attack = true;
+                        can_defend = false;
+                        showTakecardsMessage = false;
+                    }
+                    // Переход к следующему игроку, если атака завершена
+                    else if (event.key.code == sf::Keyboard::Enter && cardsTaken && deck.empty())
+                    {
+                        // Переход к следующему игроку, если карта была взята или колода пуста
+                        players[currentPlayerIndexs].isAttacker = false;
+                        players[neighborIndex].isAttacker = true;
+                        can_attack = true;
+                        can_defend = false;
+                        table.clear();
+                        attackcardss.clear();
+                        selected_cards.clear();
+                        showcardsSelectionMessage = false;
+                        showMessage = false;
+                        showInvalidMove = false;
+                        showMessageWait = false;
+                        playersChoseNo = 0;
+                        countMove++;
+                        cardsTaken = false;
+                        // Переход к следующему игроку
                     } 
-                    else { // Защита
-                        Card selectedCard = players[(currentPlayerIndex + 1) % NUM_PLAYERS].defend(attack_cards, mousePosition, trump);
-                        if (selectedCard.getTexture()) {
-                            defend_cards.push_back(selectedCard);
-                            players[(currentPlayerIndex + 1) % NUM_PLAYERS].removeCard(selectedCard);
-                        }
-                        if (attack_cards.empty()) { // Атака завершена
-                            // Смена хода
-                            currentPlayerIndex = (currentPlayerIndex + 1) % NUM_PLAYERS;
-                            // Переключаемся на атаку
-                            isAttacking = true;
+                    // Если игрок не атакует, а карты на столе есть
+                    else if (event.key.code == sf::Keyboard::Enter && !table.empty() && can_attack)
+                    {
+                        players[currentPlayerIndexs].isAttacker = false;
+                        players[neighborIndex].isAttacker = true;
+                        can_attack = true;
+                        can_defend = false;
+                        table.clear();
+                        attackcardss.clear();
+                        selected_cards.clear();
+                        showcardsSelectionMessage = false;
+                        showMessage = false;
+                        showInvalidMove = false;
+                        showMessageWait = false;
+                        playersChoseNo = 0;
+                        countMove++;
+                        cardsTaken = false;
+                        // Переход к следующему игроку
+                    }
+                    //Если на столе нет карт, а колода пуста, то игрок может взять карты, если у него не все карты сброшены
+                    else if (event.key.code == sf::Keyboard::Enter && table.empty() && deck.empty() && !players[currentPlayerIndexs].hand.empty())
+                    {
+                        // Переход к следующему игроку, если карта была взята или колода пуста
+                        players[currentPlayerIndexs].isAttacker = false;
+                        players[neighborIndex].isAttacker = true;
+                        can_attack = true;
+                        can_defend = false;
+                        table.clear();
+                        attackcardss.clear();
+                        selected_cards.clear();
+                        showcardsSelectionMessage = false;
+                        showMessage = false;
+                        showInvalidMove = false;
+                        showMessageWait = false;
+                        playersChoseNo = 0;
+                        countMove++;
+                        cardsTaken = false;
+                        // Переход к следующему игроку
+                    }
+                    else if (event.key.code == sf::Keyboard::Enter && table.empty() && deck.empty() && players[currentPlayerIndexs].hand.empty())
+                    {
+                        // Переход к следующему игроку, если карта была взята или колода пуста
+                        players[currentPlayerIndexs].isAttacker = false;
+                        players[neighborIndex].isAttacker = true;
+                        can_attack = true;
+                        can_defend = false;
+                        table.clear();
+                        attackcardss.clear();
+                        selected_cards.clear();
+                        showcardsSelectionMessage = false;
+                        showMessage = false;
+                        showInvalidMove = false;
+                        showMessageWait = false;
+                        playersChoseNo = 0;
+                        countMove++;
+                        cardsTaken = false;
+                        // Переход к следующему игроку
+                    }
+                    // Если у игрока нет подходящих карт для атаки
+                    else if (event.key.code == sf::Keyboard::Enter && can_attack && !players[currentPlayerIndexs].cardsSelected)
+                    {
+                        // Игрок не атакует, передавая ход следующему
+                        players[currentPlayerIndexs].isAttacker = false;
+                        players[neighborIndex].isAttacker = true;
+                        can_attack = true;
+                        can_defend = false;
+                        table.clear();
+                        attackcardss.clear();
+                        selected_cards.clear();
+                        showcardsSelectionMessage = false;
+                        showMessage = false;
+                        showInvalidMove = false;
+                        showMessageWait = false;
+                        playersChoseNo = 0;
+                        countMove++;
+                        cardsTaken = false;
+                    }
+                    // Если игрок не защищается, а карты на столе есть
+                    else if (event.key.code == sf::Keyboard::Enter && can_defend && !players[currentPlayerIndexs].cardsSelected)
+                    {
+                        // Игрок не защищается, передавая ход следующему
+                        players[currentPlayerIndexs].isDefender = false;
+                        players[neighborIndex].isAttacker = true;
+                        can_attack = true;
+                        can_defend = false;
+                        table.clear();
+                        attackcardss.clear();
+                        selected_cards.clear();
+                        showcardsSelectionMessage = false;
+                        showMessage = false;
+                        showInvalidMove = false;
+                        showMessageWait = false;
+                        playersChoseNo = 0;
+                        countMove++;
+                        cardsTaken = false;
+                    }
+                    // Обработка кнопок "Да" и "Нет"
+                    else if (event.key.code == sf::Keyboard::Enter && (showMessageEscape || showcardsSelectionMessage))
+                    {
+                        if (selectedButtonIndex == 0) // "Да"
+                        {
+                            // Выход из игры или продолжение игры
+                            if (showMessageEscape) {
+                                returnToMenu = true;
+                                showMessageEscape = false;
+                            } else if (showcardsSelectionMessage) {
+                                // Выбор карты
+                                if (!players[currentPlayerIndexs].cardsSelected) {
+                                    // Установка флага выбора карты
+                                    players[currentPlayerIndexs].cardsSelected = true;
+                                    selected_cards.push_back(selectedcardsIndex);
+                                    if (selected_cards.size() == 4) {
+                                        selected_cards.clear();
+                                    }
+                                }
+                                // Сброс флага выбора карты
+                                players[currentPlayerIndexs].cardsSelected = false;
+                                showcardsSelectionMessage = false;
+                            }
+                        } else if (selectedButtonIndex == 1) // "Нет"
+                        {
+                            // Сброс флагов
+                            showMessageEscape = false;
+                            showcardsSelectionMessage = false;
+                            showTakecardsMessage = false;
                         }
                     }
-                }
+                    // Обработка кнопок "Пас" и "Бито"
+                    else if (event.key.code == sf::Keyboard::Enter && (showTakecardsMessage))
+                    {
+                        if (selectedButtonIndex == 0) // "Пас"
+                        {
+                            // Игрок берет карты
+                            players[currentPlayerIndexs].isAttacker = false;
+                            players[neighborIndex].isAttacker = true;
+                            can_attack = true;
+                            can_defend = false;
+                            table.clear();
+                            attackcardss.clear();
+                            selected_cards.clear();
+                            showcardsSelectionMessage = false;
+                            showMessage = false;
+                            showInvalidMove = false;
+                            showMessageWait = false;
+                            playersChoseNo = 0;
+                            countMove++;
+                            cardsTaken = false;
+                            // Переход к следующему игроку
+                        } else if (selectedButtonIndex == 1) // "Бито"
+                        {
+                            // Игрок берет карты
+                            players[currentPlayerIndexs].isAttacker = false;
+                            players[neighborIndex].isAttacker = true;
+                            can_attack = true;
+                            can_defend = false;
+                            table.clear();
+                            attackcardss.clear();
+                            selected_cards.clear();
+                            showcardsSelectionMessage = false;
+                            showMessage = false;
+                            showInvalidMove = false;
+                            showMessageWait = false;
+                            playersChoseNo = 0;
+                            countMove++;
+                            cardsTaken = false;
+                            // Переход к следующему игроку
+                        }
+                    }
+                    break;
+                case sf::Event::MouseButtonPressed:
+                    if (event.mouseButton.button == sf::Mouse::Left) {
+                        // Обработка клика по кнопкам "Да" и "Нет"
+                        if (showMessageEscape || showcardsSelectionMessage) {
+                            sf::Vector2f mousePos = sf::Vector2f(event.mouseButton.x, event.mouseButton.y);
+                            if (buttonYes.getGlobalBounds().contains(mousePos)) {
+                                selectedButtonIndex = 0; // "Да"
+                            } else if (buttonNo.getGlobalBounds().contains(mousePos)) {
+                                selectedButtonIndex = 1; // "Нет"
+                            }
+                        }
+                        // Обработка клика по кнопкам "Пас" и "Бито"
+                        else if (showTakecardsMessage) {
+                            sf::Vector2f mousePos = sf::Vector2f(event.mouseButton.x, event.mouseButton.y);
+                            if (button_pass.getGlobalBounds().contains(mousePos)) {
+                                selectedButtonIndex = 0; // "Пас"
+                            } else if (button_bito.getGlobalBounds().contains(mousePos)) {
+                                selectedButtonIndex = 1; // "Бито"
+                            }
+                        }
+                    }
+                    break;
+                default:
+                    break;
             }
-        }
-        // Логика игры
-        if (!isGameOver) {
-            if (deck.empty() && (players[0].getHand().empty() || players[1].getHand().empty())) {
-                isGameOver = true;
-                std::cout << "Игра окончена!" << std::endl;
-                if (players[0].getHand().empty()) {
-                    std::cout << "Победил " << players[0].getName() << std::endl;
-                } else {
-                    std::cout << "Победил " << players[1].getName() << std::endl;
-                }
-                passButtonText.setString("Новая игра");
-                passButtonText.setPosition(500, 515);
-            }
-            if (isAttacking) {
-                if (currentPlayerIndex == 0 && table.empty()) {
-                    // Первый ход - игрок должен скинуть карту
-                    passButtonText.setString("Пас");
-                    passButtonText.setPosition(520, 515);
-                } else {
-                    // Можно пасовать или скидывать карту
-                    passButtonText.setString("Пас");
-                    passButtonText.setPosition(520, 515);
-                }
-            } 
-            else {
-                if (!attack_cards.empty()) {
-                    // Можно защищаться или забрать карты
-                    takeButtonText.setString("Забрать");
-                    takeButtonText.setPosition(510, 515);
-                    takeButton.setPosition(500, 500);
-                } 
-                else {
-                    // Можно пасовать или скидывать карту
-                    passButtonText.setString("Пас");
-                    passButtonText.setPosition(520, 515);
-                }
-            }
-        }
-        // Отрисовка
-        window.clear(sf::Color::White);
-        // Отрисовка колоды
-        if (!deck.empty()) {
-            deck.back().draw(window, sf::Vector2f(WINDOW_WIDTH / 2 - CARD_WIDTH / 2, WINDOW_HEIGHT / 2 - CARD_HEIGHT / 2));
-        }
-        // Отрисовка козыря
-        trump.draw(window, sf::Vector2f(WINDOW_WIDTH / 2 - CARD_WIDTH / 2 - 100, WINDOW_HEIGHT / 2 - CARD_HEIGHT / 2));
 
-        // Отрисовка стола
-        for (int i = 0; i < table.size(); ++i) {
-            table[i].draw(window, sf::Vector2f(WINDOW_WIDTH / 2 - CARD_WIDTH * (table.size() / 2 + 0.5) + CARD_WIDTH * i, WINDOW_HEIGHT / 2 - CARD_HEIGHT / 2));
         }
-        // ?????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
-        // // Отрисовка карт в руке каждого игрока
-        // for (int i = 0; i < NUM_PLAYERS; ++i) {
-        //     for (int j = 0; j < players[i].getHand().size(); ++j) {
-        //         players[i].getHand()[j].draw(window, players[i].getHandPosition() + sf::Vector2f(CARD_WIDTH * j, 0));
-        //     }
-        // }
-        // ??????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
-        // Отрисовка кнопок "пас" и "забрать карты"
-        if (isAttacking) {
-            window.draw(passButton);
-            window.draw(passButtonText);
-        } else {
-            window.draw(takeButton);
-            window.draw(takeButtonText);
-        }
-        window.display();
-        // Проверка условий конца хода
-        if (isAttacking && !attack_cards.empty()) { // Если атакующий сбросил карту, то переключаемся на защиту
-            isAttacking = false;
-            table = attack_cards;
-            attack_cards.clear();
-            // Проверка, была ли карта сброшена в атаку
-            if (table.empty()) {
-                isAttacking = true;
-                currentPlayerIndex = (currentPlayerIndex + 1) % NUM_PLAYERS;
+        windowss.clear(Color(50,200,150));
+        windowss.draw(background);
+        // Отрисовка карт игроков
+        Texture back_cards_texture;
+        if (!back_cards_texture.loadFromFile("resources/back.png")) { return 1; }
+        RectangleShape back_cards_sprite(Vector2f(77,110));
+        back_cards_sprite.setTexture(&back_cards_texture);
+        // Отрисовка карт для каждого игрока
+        for (int playerIndex = 0; playerIndex < players.size(); ++playerIndex) {
+            // Определение позиции и поворота карт в зависимости от индекса игрока
+            float rotation;
+            if (playerIndex == 0) { // Игрок снизу
+                rotation = 0;
+            } else if (playerIndex == 1) { // Игрок справа
+                rotation = 90;
+            } else if (playerIndex == 2) { // Игрок сверху
+                rotation = 0;
+            } else if (playerIndex == 3) { // Игрок слева
+                rotation = -90;
             }
-        } else if (!isAttacking && !defend_cards.empty()) { // Если защищающийся сбросил карту, то переключаемся на атаку
-            isAttacking = true;
-            table.clear(); // Очищаем стол
-            defend_cards.clear(); // Очищаем карты защищающегося
-            // Проверка, была ли карта сброшена в защиту
-            if (attack_cards.empty()) {
-                isAttacking = true;
-                currentPlayerIndex = (currentPlayerIndex + 1) % NUM_PLAYERS;
+            int id = 1; // Переменная для определения позиции карты в ряду
+            // Отрисовка карт текущего игрока
+            for (size_t cardsIndex = 0; cardsIndex < players[playerIndex].hand.size(); ++cardsIndex) {
+                cards& cards = players[playerIndex].hand[cardsIndex];
+                if (players[playerIndex].isAttacker) {
+                    // Атакующий игрок видит значения своих карт
+                    cards.sprite.setTexture(cards.texture);
+                    // Определение позиции карты в зависимости от её индекса 
+                    cards.sprite.setPosition(Vector2f(200 + (1300 / players[playerIndex].hand.size()) * id, 800));
+                    // Если карта выбрана, она рисуется в желтый цвет
+                    if (std::find(selected_cards.begin(), selected_cards.end(), cardsIndex) != selected_cards.end())
+                    {
+                        cards.sprite.setColor(Color::Magenta);
+                    } else if (cardsIndex == selectedcardsIndex)
+                    {
+                        cards.sprite.setColor(Color::Yellow);
+                    } else {
+                        cards.sprite.setColor(Color::White);
+                    }
+                    windowss.draw(cards.sprite);
+                    ++id; 
+                } else {
+                    // У остальных игроков карты рубашкой вверх
+                    back_cards_sprite.setRotation(rotation);
+                    if (playerIndex == 1) {
+                        back_cards_sprite.setPosition(Vector2f(1820, 123 + (800 / players[playerIndex].hand.size()) * id));
+                    } else if (playerIndex == 2) {
+                        back_cards_sprite.setPosition(Vector2f(200 + (1300 / players[playerIndex].hand.size()) * id, 150));
+                    } else if (playerIndex == 3) {
+                        back_cards_sprite.setPosition(Vector2f(100, 200 + (800 / players[playerIndex].hand.size()) * id));
+                    }
+                    windowss.draw(back_cards_sprite);
+                    id++;
+                }
             }
         }
-        // Дополнение карт игрокам
-        for (int i = 0; i < NUM_PLAYERS; ++i) {
-            if (players[i].getHand().size() < CARDS_PER_PLAYER) {
-                players[i].takeCards(deck, CARDS_PER_PLAYER - players[i].getHand().size());
+        // Рисование сообщения о выборе карт, если флаг установлен 
+        sf::Vector2u windowSize = windowss.getSize();
+        if (showcardsSelectionMessage) {
+            if (can_attack) {
+                message.setString(L"Select cards for attack");
+            } else if (can_defend) {
+                message.setString(L"Select cards for defend");
             }
+            float textX = windowSize.x / 2.f - message.getLocalBounds().width / 2.f;
+            float textY = (800 + 150) / 2.f - message.getLocalBounds().height / 2.f;
+            message.setPosition(textX, textY);
+            float buttonWidth = buttonYes.getLocalBounds().width;
+            float buttonHeight = buttonYes.getLocalBounds().height;
+            float buttonX = windowSize.x / 2.f - buttonWidth / 2.f; 
+            float buttonY = (800 + 150) / 2.f - buttonHeight / 2.f + 50;
+            buttonYes.setPosition(buttonX, buttonY);
+            buttonNo.setPosition(buttonX + buttonWidth + 50, buttonY);
+            // Выделение выбранной кнопки
+            if (selectedButtonIndex == 0)
+            {
+                buttonYes.setFillColor(sf::Color::Red);
+                buttonNo.setFillColor(sf::Color::White);
+            } else {
+                buttonYes.setFillColor(sf::Color::White);
+                buttonNo.setFillColor(sf::Color::Red);
+            }
+            // Рисование кнопок
+            windowss.draw(message);
+            windowss.draw(buttonYes);
+            windowss.draw(buttonNo);
         }
-        // // Пауза между ходами
-        // std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        // Рисование сообщения о нажатие Escape, если флаг установлен 
+        float textX_message_escape = windowSize.x / 2.f - message_escape.getLocalBounds().width / 2.f;
+        float textY_message_escape = (800 + 150) / 2.f - message_escape.getLocalBounds().height / 2.f;
+        message_escape.setPosition(textX_message_escape, textY_message_escape);
+        if (showMessageEscape)
+        {
+            windowss.draw(message_escape);
+            // Выделение выбранной кнопки
+            if (selectedButtonIndex == 0)
+            {
+                buttonYes.setFillColor(sf::Color::Red);
+                buttonNo.setFillColor(sf::Color::White);
+            } else {
+                buttonYes.setFillColor(sf::Color::White);
+                buttonNo.setFillColor(sf::Color::Red);
+            }
+            // Рисование кнопок
+            windowss.draw(buttonYes);
+            windowss.draw(buttonNo);
+        }
+        // Рисование сообщения о неправильном выборе, если флаг установлен
+        if (showInvalidMove) {
+            message.setString(L"Invalid move, please try again");
+            // Рисование сообщения о выборе карт, если флаг установлен 
+            float textX = windowSize.x / 2.f - message.getLocalBounds().width / 2.f;
+            float textY = (800 + 150) / 2.f - message.getLocalBounds().height / 2.f;
+            message.setPosition(textX, textY);
+            windowss.draw(message);
+        }
+        // Отображение текста ожидания, если флаг активен
+        if (showMessageWait) {
+            wait_message.setString("Ожидаем других игроков: " + std::to_string(players.size() - playersChoseNo));
+            // Рисование сообщения о выборе карт, если флаг установлен 
+            float textX_wait_message = windowSize.x / 2.f - wait_message.getLocalBounds().width / 2.f;
+            float textY_wait_message = (800 + 150) / 2.f - wait_message.getLocalBounds().height / 2.f;
+            wait_message.setPosition(textX_wait_message, textY_wait_message);
+        }
+        // Drawing code for graphics can be added here
+        windowss.display();
     }
     return 0;
 }

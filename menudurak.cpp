@@ -24,31 +24,31 @@ void Init_Text_D(Text& mtext, float xpos, float ypos, String str, int size_font,
 
 }
 
-int Game_Start_Durak(sf::RenderWindow& Play)
-{
-    RectangleShape background_play(Vector2f(1920, 1080));
-    Play.setMouseCursorVisible(true); //включаем видимость курсора
-    Texture texture_play;
-    if (!texture_play.loadFromFile("resources/table.png")) exit(1);
-    background_play.setTexture(&texture_play);
+// int Game_Start_Durak(sf::RenderWindow& Play)
+// {
+//     RectangleShape background_play(Vector2f(1920, 1080));
+//     Play.setMouseCursorVisible(true); //включаем видимость курсора
+//     Texture texture_play;
+//     if (!texture_play.loadFromFile("resources/table.png")) exit(1);
+//     background_play.setTexture(&texture_play);
 
-    while (Play.isOpen())
-    {
-        Event event_play;
-        while (Play.pollEvent(event_play))
-        {
-            if (event_play.type == Event::KeyPressed)
-            {
-                main_durak(Play);
-                if (event_play.key.code == Keyboard::Escape) { return 0; }
-            }
-        }
-        Play.clear();
-        Play.draw(background_play);
-        Play.display();
-    }
-    return 0;
-}
+//     while (Play.isOpen())
+//     {
+//         Event event_play;
+//         while (Play.pollEvent(event_play))
+//         {
+//             if (event_play.type == Event::KeyPressed)
+//             {
+//                 main_durak(Play);
+//                 if (event_play.key.code == Keyboard::Escape) { return 0; }
+//             }
+//         }
+//         Play.clear();
+//         Play.draw(background_play);
+//         Play.display();
+//     }
+//     return 0;
+// }
 
 //Настройки
 int Options_Durak(sf::RenderWindow& Optionis)
@@ -207,7 +207,7 @@ int Menu_Durak(sf::RenderWindow& window)
                         // Переходим на выбранный пункт меню
                         switch (mymenu.getSelectedMenuNumber())
                         {
-                            case 0:Game_Start_Durak(window);  break;
+                            case 0:main_durakgame(window);  break;
                             case 1:Options_Durak(window);     break;
                             case 2:About_Game_Durak(window);  break;
                             case 3:return 0; break;
