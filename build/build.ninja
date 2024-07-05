@@ -119,6 +119,13 @@ build CMakeFiles/GameMenu.dir/Hearts.cpp.obj: CXX_COMPILER__GameMenu_unscanned_D
   OBJECT_DIR = CMakeFiles\GameMenu.dir
   OBJECT_FILE_DIR = CMakeFiles\GameMenu.dir
 
+build CMakeFiles/GameMenu.dir/HeartsBOT.cpp.obj: CXX_COMPILER__GameMenu_unscanned_Debug C$:/Users/Sopha/Desktop/proj2/HeartsBOT.cpp || cmake_object_order_depends_target_GameMenu
+  DEP_FILE = CMakeFiles\GameMenu.dir\HeartsBOT.cpp.obj.d
+  FLAGS = -g
+  INCLUDES = -IC:/Users/Sopha/Desktop/proj2/build/_deps/sfml-src/include
+  OBJECT_DIR = CMakeFiles\GameMenu.dir
+  OBJECT_FILE_DIR = CMakeFiles\GameMenu.dir
+
 
 # =============================================================================
 # Link build statements for EXECUTABLE target GameMenu
@@ -127,7 +134,7 @@ build CMakeFiles/GameMenu.dir/Hearts.cpp.obj: CXX_COMPILER__GameMenu_unscanned_D
 #############################################
 # Link the executable GameMenu.exe
 
-build GameMenu.exe: CXX_EXECUTABLE_LINKER__GameMenu_Debug CMakeFiles/GameMenu.dir/main.cpp.obj CMakeFiles/GameMenu.dir/gameMenu.cpp.obj CMakeFiles/GameMenu.dir/AssetManager.cpp.obj CMakeFiles/GameMenu.dir/Animator.cpp.obj CMakeFiles/GameMenu.dir/menupik.cpp.obj CMakeFiles/GameMenu.dir/pikdam.cpp.obj CMakeFiles/GameMenu.dir/menudurak.cpp.obj CMakeFiles/GameMenu.dir/durak.cpp.obj CMakeFiles/GameMenu.dir/menuhearts.cpp.obj CMakeFiles/GameMenu.dir/Hearts.cpp.obj | _deps/sfml-build/lib/libsfml-graphics-d.a _deps/sfml-build/lib/libsfml-window-d.a _deps/sfml-build/lib/libsfml-audio-d.a _deps/sfml-build/lib/libsfml-system-d.a || _deps/sfml-build/lib/sfml-audio-d-2.dll _deps/sfml-build/lib/sfml-graphics-d-2.dll _deps/sfml-build/lib/sfml-system-d-2.dll _deps/sfml-build/lib/sfml-window-d-2.dll
+build GameMenu.exe: CXX_EXECUTABLE_LINKER__GameMenu_Debug CMakeFiles/GameMenu.dir/main.cpp.obj CMakeFiles/GameMenu.dir/gameMenu.cpp.obj CMakeFiles/GameMenu.dir/AssetManager.cpp.obj CMakeFiles/GameMenu.dir/Animator.cpp.obj CMakeFiles/GameMenu.dir/menupik.cpp.obj CMakeFiles/GameMenu.dir/pikdam.cpp.obj CMakeFiles/GameMenu.dir/menudurak.cpp.obj CMakeFiles/GameMenu.dir/durak.cpp.obj CMakeFiles/GameMenu.dir/menuhearts.cpp.obj CMakeFiles/GameMenu.dir/Hearts.cpp.obj CMakeFiles/GameMenu.dir/HeartsBOT.cpp.obj | _deps/sfml-build/lib/libsfml-graphics-d.a _deps/sfml-build/lib/libsfml-window-d.a _deps/sfml-build/lib/libsfml-audio-d.a _deps/sfml-build/lib/libsfml-system-d.a || _deps/sfml-build/lib/sfml-audio-d-2.dll _deps/sfml-build/lib/sfml-graphics-d-2.dll _deps/sfml-build/lib/sfml-system-d-2.dll _deps/sfml-build/lib/sfml-window-d-2.dll
   FLAGS = -g
   LINK_LIBRARIES = _deps/sfml-build/lib/libsfml-graphics-d.a  _deps/sfml-build/lib/libsfml-window-d.a  _deps/sfml-build/lib/libsfml-audio-d.a  _deps/sfml-build/lib/libsfml-system-d.a  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\GameMenu.dir

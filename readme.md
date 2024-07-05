@@ -29,32 +29,26 @@
         sudo apt-get install cmake
         (Для других дистрибутивов Linux могут быть другие команды установки)
 ### Последовательность сборки приложения:
-1. Создание папки проекта:
-   * Создайте новую папку для вашего проекта, например, "my_card_game".
-2. Распаковка SFML:
-   * Распакуйте скачанный архив SFML в папку с проектом.
-3. Создание CMakeLists.txt:
-   * Создайте файл CMakeLists.txt в корневой папке проекта с следующим содержимым:
-     cmake_minimum_required(VERSION 3.10)
-     project(my_card_game)
-     * Настройка SFML
-     set(SFML_DIR ${CMAKE_CURRENT_SOURCE_DIR}/SFML)
-     include_directories(${SFML_DIR}/include)
-     add_subdirectory(${SFML_DIR})
-     * Файлы вашего проекта
-     add_executable(my_card_game main.cpp) 
-     target_link_libraries(my_card_game SFML_graphics SFML_window SFML_audio SFML_system)
-     * Замените my_card_game на имя вашего проекта.
-     * main.cpp -  главный файл вашего проекта.
-     *  Убедитесь, что путь к папке SFML (SFML_DIR) верный.
-4. Создание папки сборки:
+1. Скачивание проекта:
+   * Скачайте проект с GitHub через команду git clone <адрес_репозитория>. 
+2. Создание папки сборки:
    * Создайте папку "build" в корневой папке проекта.
-5. Настройка CMake:
-   * VS Code: Откройте палитру команд (Ctrl+Shift+P) и выберите "CMake: Configure".
-   * __Linux__: Перейдите в папку "build" в терминале и запустите: cmake ..
-6. Сборка проекта:
-   * VS Code:  Откройте палитру команд и выберите "CMake: Build".
-   * __Linux__:  Запустите команду: make
-7. Запуск приложения:
-   * VS Code:  В палитре команд выберите "CMake: Run".
-   * __Linux__:  Перейдите в папку "build" в терминале и запустите: ./my_card_game
+3. **Перемещение ресурсов:**
+   * Перенесите файлы из папки `resources/необходимо перенести в build/` в папку `build/`.
+     * Список файлов: `openal32.dll`, `sfml-audio-2.dll`, `sfml-audio-d-2.dll`, `sfml-graphics-2.dll`, `sfml-graphics-d-2.dll`, `sfml-network-2.dll`, `sfml-network-d-2.dll`, `sfml-system-2.dll`, `sfml-system-d-2.dll`, `sfml-window-2.dll`, `sfml-window-d-2.dll`.
+4. **Настройка CMake:**
+   * **VS Code:** Откройте палитру команд (Ctrl+Shift+P) и выберите "CMake: Configure".
+   * **Linux:** Перейдите в папку "build" в терминале и запустите: `cmake ..`
+5. **Сборка проекта:**
+   * **VS Code:**  Откройте палитру команд и выберите "CMake: Build".
+   * **Linux:**  Запустите команду: `make`
+6. **Запуск приложения:**
+   * **VS Code:**  В палитре команд выберите "CMake: Run".
+   * **Linux:**  Перейдите в папку "build" в терминале и запустите: `./my_card_game`
+
+**Объяснение:**
+
+* **Перемещение ресурсов:**  Это необходимо для того, чтобы библиотеки SFML были доступны во время выполнения приложения.  При сборке проекта CMake создает ссылки на эти библиотеки, но сами файлы библиотек должны быть в той же папке, что и исполняемый файл.
+
+**Важно:**
+* **Не создавайте никакие папки в папке `build/`**, просто скопируйте туда файлы.

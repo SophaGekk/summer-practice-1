@@ -61,6 +61,12 @@
 },
 {
   "directory": "C:/Users/Sopha/Desktop/proj2/build",
+  "command": "C:\\msys64\\mingw64\\bin\\c++.exe -IC:/Users/Sopha/Desktop/proj2/build/_deps/sfml-src/include -g -o CMakeFiles\\GameMenu.dir\\HeartsBOT.cpp.obj -c C:\\Users\\Sopha\\Desktop\\proj2\\HeartsBOT.cpp",
+  "file": "C:\\Users\\Sopha\\Desktop\\proj2\\HeartsBOT.cpp",
+  "output": "CMakeFiles\\GameMenu.dir\\HeartsBOT.cpp.obj"
+},
+{
+  "directory": "C:/Users/Sopha/Desktop/proj2/build",
   "command": "C:\\msys64\\mingw64\\bin\\c++.exe -DSFML_SYSTEM_EXPORTS -IC:/Users/Sopha/Desktop/proj2/build/_deps/sfml-src/include -IC:/Users/Sopha/Desktop/proj2/build/_deps/sfml-src/src -g  -Wall -Wextra -Wshadow -Wnon-virtual-dtor -Wcast-align -Wunused -Woverloaded-virtual -Wconversion -Wsign-conversion -Wdouble-promotion -Wformat=2 -Wnull-dereference -Wold-style-cast -Wpedantic -Wmisleading-indentation -Wduplicated-cond -Wlogical-op -Wduplicated-branches -o _deps\\sfml-build\\src\\SFML\\System\\CMakeFiles\\sfml-system.dir\\Clock.cpp.obj -c C:\\Users\\Sopha\\Desktop\\proj2\\build\\_deps\\sfml-src\\src\\SFML\\System\\Clock.cpp",
   "file": "C:\\Users\\Sopha\\Desktop\\proj2\\build\\_deps\\sfml-src\\src\\SFML\\System\\Clock.cpp",
   "output": "_deps\\sfml-build\\src\\SFML\\System\\CMakeFiles\\sfml-system.dir\\Clock.cpp.obj"
