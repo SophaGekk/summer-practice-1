@@ -138,7 +138,7 @@ build GameMenu.exe: CXX_EXECUTABLE_LINKER__GameMenu_Debug CMakeFiles/GameMenu.di
   FLAGS = -g
   LINK_LIBRARIES = _deps/sfml-build/lib/libsfml-graphics-d.a  _deps/sfml-build/lib/libsfml-window-d.a  _deps/sfml-build/lib/libsfml-audio-d.a  _deps/sfml-build/lib/libsfml-system-d.a  -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\GameMenu.dir
-  POST_BUILD = cd .
+  POST_BUILD = C:\Windows\system32\cmd.exe /C "cd /D C:\Users\Sopha\Desktop\proj2\build && C:\msys64\mingw64\bin\cmake.exe -E copy_directory C:/Users/Sopha/Desktop/proj2/resources C:/Users/Sopha/Desktop/proj2/build/resources"
   PRE_LINK = cd .
   TARGET_FILE = GameMenu.exe
   TARGET_IMPLIB = libGameMenu.dll.a
