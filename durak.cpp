@@ -16,21 +16,21 @@ public:
     Sprite sprite; // Спрайт карты
 };
 // Класс для представления игрока
-class Player {
+class Players {
 public:
     std::string name; // Имя игрока
     std::vector<Cards> hand; // Рука игрока
     bool isAttacker; // Является ли игрок атакующим
     bool isDefender; // Является ли игрок защищающимся
     // Конструктор игрока
-    Player() : isAttacker(false), isDefender(false), name("") {}
+    Players() : isAttacker(false), isDefender(false), name("") {}
 };
 // Функция для определения индекса текущего атакующего игрока
-int findCurrentPlayer(std::vector<Player>& players)
+int findCurrentPlayers(std::vector<Players>& Playerss)
 {
-    for (int i = 0; i < players.size(); ++i)
+    for (int i = 0; i < Playerss.size(); i++)
     {
-        if (players[i].isAttacker)
+        if (Playerss[i].isAttacker)
         {
             return i; // Возвращает индекс текущего атакующего игрока
         }
@@ -40,7 +40,7 @@ int findCurrentPlayer(std::vector<Player>& players)
 // Функция для проверки на атаку
 bool attack(std::vector<Cards>& table, Cards& attackCards) {
     if (!table.empty()) {
-        for (int i = 0; i < table.size(); ++i) {
+        for (int i = 0; i < table.size(); i++) {
             if (attackCards.value == table[i].value) {
                 return true;
             }
@@ -57,42 +57,42 @@ bool defense(Cards& attackCards, Cards& defenseCards, Cards& trump) {
     return false;
 }
 // Функция для определения, кто первый ходит
-int whoFirst (std::vector<Player>& players, Cards& trump) {
+int whoFirst (std::vector<Players>& Playerss, Cards& trump) {
     // Словарь для хранения минимального козыря и значения для каждого игрока
-    std::map<int, std::pair<int, int>> playerData;
+    std::map<int, std::pair<int, int>> PlayersData;
     // Проход по всем игрокам
-    for (int i = 0; i < players.size(); ++i) {
-        int minTrump = 15;  // Максимальное значение козыря
-        int minValue = 15; // Максимальное значение карты
-        for (const Cards& Cards : players[i].hand) {
+    for (int i = 0; i < Playerss.size(); i++) {
+        int minTrump = 14;  // Максимальное значение козыря
+        int minValue = 14; // Максимальное значение карты
+        for (Cards& Cards : Playerss[i].hand) {
             if (Cards.suit == trump.suit) {
                 minTrump = std::min(minTrump, Cards.value);
             }
             minValue = std::min(minValue, Cards.value);
         }
         // Сохранение данных в словарь
-        playerData[i] = std::make_pair(minTrump, minValue);
+        PlayersData[i] = std::make_pair(minTrump, minValue);
     }
     // Определение первого игрока
-    int firstPlayerIndex = 0;
-    int minTrump = playerData[0].first;
-    int minValue = playerData[0].second;
-    for (int i = 1; i < players.size(); ++i) {
-        if (playerData[i].first < minTrump) {
-            minTrump = playerData[i].first;
-            firstPlayerIndex = i;
-        } else if (playerData[i].first == minTrump && playerData[i].second < minValue) {
-            minValue = playerData[i].second;
-            firstPlayerIndex = i;
+    int firstPlayersIndex = 0;
+    int minTrump = PlayersData[0].first;
+    int minValue = PlayersData[0].second;
+    for (int i = 1; i < Playerss.size(); i++) {
+        if (PlayersData[i].first < minTrump) {
+            minTrump = PlayersData[i].first;
+            firstPlayersIndex = i;
+        } else if (PlayersData[i].first == minTrump && PlayersData[i].second < minValue) {
+            minValue = PlayersData[i].second;
+            firstPlayersIndex = i;
         }
     }
-    return firstPlayerIndex;
+    return firstPlayersIndex;
 }
 // Функция, которая проверяет, закончилась ли игра
-bool isOver (std::vector<Cards>& deck, std::vector<Player>& players) {
+bool isOver (std::vector<Cards>& deck, std::vector<Players>& Playerss) {
     int count = 0;
-    for (const Player& player: players) {
-        if (player.hand.empty()) {
+    for (Players& Players: Playerss) {
+        if (Players.hand.empty()) {
             count++;
         }
     }
@@ -102,14 +102,14 @@ bool isOver (std::vector<Cards>& deck, std::vector<Player>& players) {
     return false;
 }
 // Глобальная переменная для индекса текущего игрока
-int currentPlayerIndexs = 0;
+int currentPlayersIndexs = 0;
 int main_durakgame(sf::RenderWindow& windowss) {
     srand(time(0));
     // Загрузка текстуры стола
     Texture tableTexture;
     if (!tableTexture.loadFromFile("resources/table.png")) {
         std::cerr << "Ошибка загрузки текстуры стола: " << "resources/table.png" << std::endl;
-        return 1; 
+        return -1;
     }
     // Создание спрайта стола
     RectangleShape background(Vector2f(1920,1080));
@@ -118,20 +118,17 @@ int main_durakgame(sf::RenderWindow& windowss) {
     // Масти карт
     std::vector<std::string> suits = {"HEARTS", "DIAMONDS", "CLUBS", "SPADES"};
     // Создание колоды карт 
-    std::vector<Cards> deck;
+    std::vector<Cards> deck(36);
     sf::Texture CardssTexture;
-     for (int value = 6; value <= 14; ++value) {
+     for (int value = 6; value < 14; value++) {
         for (const std::string& suit : suits) {
-            // Исключаем даму крести
-            if (value == 12 && suit == "CLUBS") {
-                continue; // Пропускаем добавление карты "Дама Пик"
-            }
             Cards Cardss;
             Cardss.value = value;
             Cardss.suit = suit;
-            std::string filename = "resources/" + std::to_string(value) + suit + ".png";
-            if (!CardssTexture.loadFromFile(filename)) { 
-                std::cerr << "Ошибка загрузки текстуры: " << filename << std::endl; 
+            std::string deckFilename = "resources/" + std::to_string(value) + suit + ".png";
+            if (!CardssTexture.loadFromFile(deckFilename)) { 
+                std::cerr << "Ошибка загрузки текстуры карт: " << deckFilename << std::endl; 
+                return -1;
             } else {
                 Cardss.texture = CardssTexture; 
                 Cardss.sprite.setTexture(Cardss.texture);
@@ -143,8 +140,8 @@ int main_durakgame(sf::RenderWindow& windowss) {
     sf::Sprite deckSprite;
     Texture deckTexture;
     if (!deckTexture.loadFromFile("resources/back.png")) {
-        std::cerr << "Ошибка загрузки текстуры колоды: " << "resources/table.png" << std::endl;
-        return 1; 
+        std::cerr << "Ошибка загрузки текстуры колоды: resources/back.png" << std::endl;
+        return -1;
     }
     deckSprite.setTexture(deckTexture);
     deckSprite.setPosition(100, 400); 
@@ -160,284 +157,252 @@ int main_durakgame(sf::RenderWindow& windowss) {
     // Отрисовка козыря
     sf::Sprite trumpSprite;
     Texture trumpTexture;
-    std::string filename = "resources/" + std::to_string(trump.value) + trump.suit + ".png";
-    if (!trumpTexture.loadFromFile(filename)) {
-        std::cerr << "Ошибка загрузки текстуры козыря: " << "resources/table.png" << std::endl;
-        return 1; 
+    std::string trumpFilename = "resources/" + std::to_string(trump.value) + trump.suit + ".png";
+    if (!trumpTexture.loadFromFile(trumpFilename)) {
+        std::cerr << "Ошибка загрузки текстуры козыря: " << trumpFilename << std::endl;
+        return -1;
     }
     trumpSprite.setTexture(trumpTexture);
     trumpSprite.setPosition(100, 400); 
     // Создание игроков
-    std::vector<Player> players(4);
-    players[0].name = "Vasya";
-    players[1].name = "Masha";
-    players[2].name = "Stepan";
-    players[3].name = "Katya";
-    players[0].isAttacker = true;
-    players[0].isDefender = true;
-    players[1].isAttacker = false;
-    players[1].isDefender = false;
-    players[2].isAttacker = false;
-    players[2].isDefender = false;
-    players[3].isAttacker = false;
-    players[3].isDefender = false;
+    std::vector<Players> Playerss(4);
+    Playerss[0].name = "Vasya";
+    Playerss[1].name = "Masha";
+    Playerss[2].name = "Stepan";
+    Playerss[3].name = "Katya";
+    // Playerss[0].isAttacker = false;
+    // Playerss[0].isDefender = false;
+    // Playerss[1].isAttacker = false;
+    // Playerss[1].isDefender = false;
+    // Playerss[2].isAttacker = false;
+    // Playerss[2].isDefender = false;
+    // Playerss[3].isAttacker = false;
+    // Playerss[3].isDefender = false;
     // Текст для отображения имен игроков
     sf::Font font_1;
     if (!font_1.loadFromFile("resources/ffont.ttf"))
     {
-        std::cerr << "Ошибка загрузки шрифта!" << std::endl;
+        std::cerr << "Ошибка загрузки шрифта: resources/ffont.ttf" << std::endl;
+        return -1;
     }
-    sf::Text playerTexts[4];
+    sf::Text PlayersTexts[4];
     for (size_t i = 0; i < 4; ++i) {
-        playerTexts[i].setFont(font_1);
-        playerTexts[i].setCharacterSize(24);
-        playerTexts[i].setFillColor(sf::Color::White);
-        playerTexts[i].setString(players[i].name);
+        PlayersTexts[i].setFont(font_1);
+        PlayersTexts[i].setCharacterSize(24);
+        PlayersTexts[i].setFillColor(sf::Color::White);
+        PlayersTexts[i].setString(Playerss[i].name);
     }
     // Позиционирование имен игроков
-    playerTexts[0].setPosition(200, 700);
-    playerTexts[1].setPosition(1600, 200);
-    playerTexts[2].setPosition(200, 100);
-    playerTexts[3].setPosition(100, 600);
+    PlayersTexts[0].setPosition(200, 700);
+    PlayersTexts[1].setPosition(1600, 200);
+    PlayersTexts[2].setPosition(200, 100);
+    PlayersTexts[3].setPosition(100, 600);
     // Раздача карт
-    int CardssPerPlayer = 6;
-    for (int i = 0; i < CardssPerPlayer; ++i)
+    int CardssPerPlayers = 6;
+    for (int i = 0; i < CardssPerPlayers; i++)
     {
-        for (int j = 0; j < players.size(); ++j)
+        for (int j = 0; j < Playerss.size(); ++j)
         {
             if (!deck.empty()) {
-                players[j].hand.push_back(deck.back());
+                Playerss[j].hand.push_back(deck.back());
                 deck.pop_back();
             }
         }
     }
-    // Сообщения о возможности атаковать, выход
-    sf::Text message_can_attack;
-    message_can_attack.setFont(font_1);
-    message_can_attack.setCharacterSize(24);
-    message_can_attack.setFillColor(sf::Color::White);
-    message_can_attack.setPosition(100.f, 100.f);
-    message_can_attack.setString(L"Cannot attack with this Cards");
-    sf::Text message_can_defend;
-    message_can_defend.setFont(font_1);
-    message_can_defend.setCharacterSize(24);
-    message_can_defend.setFillColor(sf::Color::White);
-    message_can_defend.setPosition(100.f, 100.f);
-    message_can_defend.setString(L"Cannot defend with this Cards");
+    // Сообщение о выходе
     sf::Text message_escape;
     message_escape.setFont(font_1);
     message_escape.setCharacterSize(24);
     message_escape.setFillColor(sf::Color::White);
     message_escape.setPosition(100.f, 100.f);
     message_escape.setString(L"Do you really want to get out?");
+    // Сообщение
     sf::Text message;
     message.setFont(font_1);
     message.setCharacterSize(30);
     message.setFillColor(sf::Color::White);
     message.setPosition(100.f, 100.f);
-    // Кнопки "Пас" и "Бито"
-    sf::Text passButton;
-    passButton.setFont(font_1);
-    passButton.setString("Pass");
-    passButton.setCharacterSize(24);
-    passButton.setFillColor(sf::Color::White);
-    passButton.setPosition(200.f, 200.f);
-    sf::Text takeCardssButton;
-    takeCardssButton.setFont(font_1);
-    takeCardssButton.setString("Bito");
-    takeCardssButton.setCharacterSize(24);
-    takeCardssButton.setFillColor(sf::Color::White);
-    takeCardssButton.setPosition(400.f, 200.f);
+    // Кнопка "Да"
+    sf::Text buttonYes;
+    buttonYes.setFont(font_1);
+    buttonYes.setString("Yes");
+    buttonYes.setCharacterSize(24);
+    buttonYes.setFillColor(sf::Color::White);
+    buttonYes.setPosition(200.f, 200.f);
+    // Кнопка "Нет"
+    sf::Text buttonNo;
+    buttonNo.setFont(font_1);
+    buttonNo.setString("No");
+    buttonNo.setCharacterSize(24);
+    buttonNo.setFillColor(sf::Color::White);
+    buttonNo.setPosition(400.f, 200.f);
     // Индекс выбранной кнопки (0 - Да, 1 - Нет)
     int selectedButtonIndex = 0;
     // Флаги для управления игрой
     bool showCardsSelectionMessage = true; // Флаг для отображения текста выбора карт
-    bool showMessageEscape = false; // Флаг для отображения текста выхода из игры
-    bool returnToMenu = false; // Флаг для отображения текста выхода в меню
-    bool showMessageWait = false; // Флаг для отображения текста ожидания игроков
     bool showMessage = false; // Флаг для отображения сообщения
     bool showInvalidMove = false; // Флаг для отображения сообщения о неправильном выборе карты для атаки/защиты
-    bool showTakeCardsMessage = false; // Флаг для отображения сообщения о взятии карты
     bool attacking = true; // Можно ли атаковать
     bool defending = false; // Можно ли защищаться
-    int playersChoseNo = 0; // Переменная для отслеживания количества игроков, выбравших "нет"
-    // Код для отображения сообщения "Ожидаем других игроков: количество"
-    sf::Text wait_message;
-    wait_message.setFont(font_1);
-    wait_message.setCharacterSize(30);
-    wait_message.setFillColor(sf::Color::White);
-    wait_message.setPosition(100.f, 100.f);
-    int shift = 0; // Начальное значение смещения
     // Game Loop
     int countMove = 1;
-    bool CardsTaken = false;
-    std::vector<Cards> table; 
-    std::vector<Cards> attackCardss;
+    std::vector<Cards> table(36); 
+    std::vector<Cards> attackCardss(36);
     int selectedCardsIndex = 0;
+    sf::Event event;
     while (windowss.isOpen()) {
-        if(returnToMenu) {
-            return 0;
-            break;
+        // Раздача карт
+        for (auto& Players : Playerss) {
+            if (Players.hand.size() < 6) {
+                Players.hand.push_back(deck.back());
+                deck.pop_back();
+            }
         }
-        sf::Event event;
-        while (windowss.pollEvent(event)) {
-            // Раздача карт, если надо
-            for (auto& player : players) {
-                if (player.hand.size() < 6) {
-                    player.hand.push_back(deck.back());
-                    deck.pop_back();
+        // Определение текущего игрока
+        if (countMove == 1) {
+            currentPlayersIndexs = whoFirst(Playerss,trump);
+        } else {
+            currentPlayersIndexs = findCurrentPlayers(Playerss);
+        }
+        Playerss[currentPlayersIndexs].isAttacker = true;
+        // Определение соседа справа
+        int neighborIndex = (currentPlayersIndexs + 1) % Playerss.size();
+        Playerss[neighborIndex].isDefender = true;
+        // Проверка на конец игры
+        if (deck.empty()) {
+            for (int i = 0; i < Playerss.size(); i++) {
+                if (Playerss[i].hand.empty()) {
+                    std::cout << Playerss[i].name << " win!" << std::endl;
                 }
             }
-            // Определение текущего игрока
-            if (countMove == 1) {
-                currentPlayerIndexs = whoFirst(players,trump);
-            } else {
-                currentPlayerIndexs = findCurrentPlayer(players);
+            Playerss.erase(std::remove_if(Playerss.begin(), Playerss.end(), [](const Players& p) { 
+                return p.hand.empty(); 
+            }), Playerss.end()); 
+            if (Playerss.size() == 1) {
+                std::cout << Playerss[0].name << " - durak!" << std::endl;
             }
-            // Определение соседа справа
-            int neighborIndex = (currentPlayerIndexs + 1) % players.size(); 
-            switch (event.type) {
-                case sf::Event::Closed:
-                    windowss.close();
-                    break;
-                case sf::Event::KeyPressed:
-                    // Обработка кнопки "Escape"
-                    if (event.key.code == Keyboard::Escape) {
-                        showMessageEscape = true;
-                        showCardsSelectionMessage = false;
+        }
+        // Обработка событий
+        sf::Event event;
+        while (windowss.pollEvent(event)) {
+            // Закрытие окна
+            if (event.type == sf::Event::Closed) windowss.close();
+            // Обработка нажатия кнопок
+            if (event.type == sf::Event::KeyPressed) {
+                // Escape - выход
+                if (event.key.code == sf::Keyboard::Escape) windowss.close();
+                // Left - выбор карты справа налево
+                if (event.key.code == sf::Keyboard::Left) {
+                    if (selectedCardsIndex > 0) {
+                        --selectedCardsIndex;
+                    } else {
+                        selectedCardsIndex = Playerss[currentPlayersIndexs].hand.size() - 1;
                     }
-                    // Обработка кнопок "Pass", "Take Cardss"
-                    if (event.type == sf::Event::MouseButtonPressed) {
-                        if (event.mouseButton.button == sf::Mouse::Left) {
-                            // Получить глобальные координаты курсора мыши
-                            sf::Vector2i mousePos = sf::Mouse::getPosition(windowss);
-                            // Проверка нажатия кнопки "Pass"
-                            if (passButton.getGlobalBounds().contains(mousePos.x, mousePos.y) && attacking) {
-                                players[currentPlayerIndexs].isAttacker = false;
-                                players[neighborIndex].isAttacker = true;
-                                players[neighborIndex].isDefender = false;
-                                attacking = true; 
-                                defending = false;
-                                countMove++;
-                            }
-                            // Проверка нажатия кнопки "Take Cardss"
-                            if (takeCardssButton.getGlobalBounds().contains(mousePos.x, mousePos.y) && defending) {
-                                for (auto& Cards : table) {
-                                    players[currentPlayerIndexs].hand.push_back(Cards);
-                                }
-                                players[currentPlayerIndexs].isDefender = false;
-                                players[neighborIndex].isAttacker = true; 
-                                attacking = true;
-                                defending = false;
-                                table.clear();
-                                attackCardss.clear();
-                                countMove++;
-                            }
-                        }
+                }
+                // Left - выбор карты слева направо 
+                if (event.key.code == sf::Keyboard::Right) {
+                    if (selectedCardsIndex < Playerss[currentPlayersIndexs].hand.size() - 1) {
+                        ++selectedCardsIndex;
+                    } else {
+                        selectedCardsIndex = 0;
                     }
-                    // Выбор карты
-                    if(event.key.code == sf::Keyboard::Left)
-                    {                        
-                        if (selectedCardsIndex > 0)
-                        {
-                            --selectedCardsIndex;
-                        } else {
-                            selectedCardsIndex = players[currentPlayerIndexs].hand.size() - 1;
-                        }
+                }
+                // P - пас
+                if (event.key.code == sf::Keyboard::P && attacking) {
+                    Playerss[currentPlayersIndexs].isAttacker = false;
+                    Playerss[neighborIndex].isAttacker = true;
+                    Playerss[neighborIndex].isDefender = false;
+                    attacking = true; 
+                    defending = false;
+                    countMove++;
+                }
+                // T - взять карты
+                if (event.key.code == sf::Keyboard::T && defending) {
+                    for (Cards& Cards : table) {
+                        Playerss[currentPlayersIndexs].hand.push_back(Cards);
                     }
-                    if(event.key.code == sf::Keyboard::Right)
-                    {
-                        // Переход к предыдущей карте с круговым циклом
-                        if (selectedCardsIndex < players[currentPlayerIndexs].hand.size() - 1)
-                        {
-                            ++selectedCardsIndex;
-                        } else {
-                            selectedCardsIndex = 0;
-                        }
+                    Playerss[currentPlayersIndexs].isDefender = false;
+                    Playerss[neighborIndex].isAttacker = true; 
+                    attacking = true;
+                    defending = false;
+                    table.clear();
+                    attackCardss.clear();
+                    countMove++;
+                }
+                // Enter - выбор карты для атаки
+                if (event.key.code == sf::Keyboard::Enter && attacking) {
+                    if (attack(table, Playerss[currentPlayersIndexs].hand[selectedCardsIndex])) {
+                        attackCardss.push_back(Playerss[currentPlayersIndexs].hand[selectedCardsIndex]);
+                        table.push_back(Playerss[currentPlayersIndexs].hand[selectedCardsIndex]);
+                        Playerss[currentPlayersIndexs].hand.erase(Playerss[currentPlayersIndexs].hand.begin() + selectedCardsIndex);
+                        Playerss[currentPlayersIndexs].isAttacker = false;
+                        Playerss[neighborIndex].isDefender = true;
+                        attacking = false;
+                        defending = true;
+                        showCardsSelectionMessage = true;
+                    } else {
+                        showInvalidMove = true;
+                        showCardsSelectionMessage = true;
                     }
-                    // Выбор карты для атаки/защиты
-                    if (event.key.code == sf::Keyboard::Enter)
-                    {
-                        if (attacking) 
-                        {
-                            // Атака
-                            if (attack(table, players[currentPlayerIndexs].hand[selectedCardsIndex])) {
-                                attackCardss.push_back(players[currentPlayerIndexs].hand[selectedCardsIndex]);
-                                table.push_back(players[currentPlayerIndexs].hand[selectedCardsIndex]);
-                                players[currentPlayerIndexs].hand.erase(players[currentPlayerIndexs].hand.begin() + selectedCardsIndex);
-                                // Переход хода к защищающемуся игроку
-                                players[currentPlayerIndexs].isAttacker = false;
-                                players[neighborIndex].isDefender = true;
-                                attacking = false;
-                                defending = true;
-                                showCardsSelectionMessage = true;
-                            } else {
-                                showInvalidMove = true;
-                                showCardsSelectionMessage = true;
-                            } 
-                        }    
-                        else if (defending) 
-                        {
-                            // Защита
-                            if (defense(attackCardss.back(), players[currentPlayerIndexs].hand[selectedCardsIndex], trump)) {
-                                table.push_back(players[currentPlayerIndexs].hand[selectedCardsIndex]);
-                                players[currentPlayerIndexs].hand.erase(players[currentPlayerIndexs].hand.begin() + selectedCardsIndex);
-                                // Переход хода к атакующему игроку
-                                players[currentPlayerIndexs].isAttacker = true;
-                                players[neighborIndex].isDefender = false;
-                                attacking = true;
-                                defending = false;
-                                showCardsSelectionMessage = true;
-                            } else {
-                                showInvalidMove = true;
-                                showCardsSelectionMessage = true;
-                            }
-                        }
+                // Enter - выбор карты для защиты
+                } else if (event.key.code == sf::Keyboard::Enter && defending) {
+                    if (defense(attackCardss.back(), Playerss[currentPlayersIndexs].hand[selectedCardsIndex], trump)) {
+                        table.push_back(Playerss[currentPlayersIndexs].hand[selectedCardsIndex]);
+                        Playerss[currentPlayersIndexs].hand.erase(Playerss[currentPlayersIndexs].hand.begin() + selectedCardsIndex);
+                        Playerss[currentPlayersIndexs].isAttacker = true;
+                        Playerss[neighborIndex].isDefender = false;
+                        attacking = true;
+                        defending = false;
+                        showCardsSelectionMessage = true;
+                        attackCardss.clear();
+                    } else {
+                        showInvalidMove = true;
+                        showCardsSelectionMessage = true;
                     }
-                    break;
-                default:
-                    break;
+                }
             }
-
         }
         windowss.clear(Color(50,200,150));
         windowss.draw(background);
         // Отрисовка имен игроков
-        for (size_t i = 0; i < 4; ++i) {
-            if (players[i].isAttacker) {
-                playerTexts[i].setFillColor(sf::Color::Yellow); // Подсветка атакующего
+        for (int i = 0; i < 4; i++) {
+            if (Playerss[i].isAttacker) {
+                PlayersTexts[i].setFillColor(sf::Color::Yellow); // Подсветка атакующего
             } else {
-                playerTexts[i].setFillColor(sf::Color::White);
+                PlayersTexts[i].setFillColor(sf::Color::White);
             }
-            windowss.draw(playerTexts[i]);
+            windowss.draw(PlayersTexts[i]);
         }
         // Отрисовка карт игроков
         Texture back_Cards_texture;
-        if (!back_Cards_texture.loadFromFile("resources/back.png")) { return 1; }
+        if (!back_Cards_texture.loadFromFile("resources/back.png")) {
+            std::cerr << "Ошибка загрузки текстуры рубашки карт: resources/back.png" << std::endl;
+            return -1;
+        }
         RectangleShape back_Cards_sprite(Vector2f(77,110));
         back_Cards_sprite.setTexture(&back_Cards_texture);
         // Отрисовка карт для каждого игрока
-        for (int playerIndex = 0; playerIndex < players.size(); ++playerIndex) {
+        for (int PlayersIndex = 0; PlayersIndex < Playerss.size(); ++PlayersIndex) {
             // Определение позиции и поворота карт в зависимости от индекса игрока
             float rotation;
-            if (playerIndex == 0) { // Игрок снизу
+            if (PlayersIndex == 0) { // Игрок снизу
                 rotation = 0;
-            } else if (playerIndex == 1) { // Игрок справа
+            } else if (PlayersIndex == 1) { // Игрок справа
                 rotation = 90;
-            } else if (playerIndex == 2) { // Игрок сверху
+            } else if (PlayersIndex == 2) { // Игрок сверху
                 rotation = 0;
-            } else if (playerIndex == 3) { // Игрок слева
+            } else if (PlayersIndex == 3) { // Игрок слева
                 rotation = -90;
             }
             int id = 1; // Переменная для определения позиции карты в ряду
             // Отрисовка карт текущего игрока
-            for (size_t CardsIndex = 0; CardsIndex < players[playerIndex].hand.size(); ++CardsIndex) {
-                Cards& Cards = players[playerIndex].hand[CardsIndex];
-                if (players[playerIndex].isAttacker) {
+            for (int CardsIndex = 0; CardsIndex < Playerss[PlayersIndex].hand.size(); CardsIndex++) {
+                Cards& Cards = Playerss[PlayersIndex].hand[CardsIndex];
+                if (Playerss[PlayersIndex].isAttacker) {
                     // Атакующий игрок видит значения своих карт
                     Cards.sprite.setTexture(Cards.texture);
                     // Определение позиции карты в зависимости от её индекса 
-                    Cards.sprite.setPosition(Vector2f(200 + (1300 / players[playerIndex].hand.size()) * id, 800));
+                    Cards.sprite.setPosition(Vector2f(200 + (1300 / Playerss[PlayersIndex].hand.size()) * id, 800));
                     // Если карта выбрана, она рисуется в желтый цвет
                     if (CardsIndex != selectedCardsIndex)
                     {
@@ -452,8 +417,8 @@ int main_durakgame(sf::RenderWindow& windowss) {
                     ++id; 
                 } else {
                     back_Cards_sprite.setRotation(rotation);
-                    if (players[playerIndex].isDefender) {
-                        back_Cards_sprite.setPosition(Vector2f(200 + (1300 / players[playerIndex].hand.size()) * id, 150));
+                    if (Playerss[PlayersIndex].isDefender) {
+                        back_Cards_sprite.setPosition(Vector2f(200 + (1300 / Playerss[PlayersIndex].hand.size()) * id, 150));
                     }
                     windowss.draw(back_Cards_sprite);
                     id++;
@@ -471,46 +436,30 @@ int main_durakgame(sf::RenderWindow& windowss) {
             float textX = windowSize.x / 2.f - message.getLocalBounds().width / 2.f;
             float textY = (800 + 150) / 2.f - message.getLocalBounds().height / 2.f;
             message.setPosition(textX, textY);
-            float buttonWidth = passButton.getLocalBounds().width;
-            float buttonHeight = passButton.getLocalBounds().height;
+            float buttonWidth = buttonYes.getLocalBounds().width;
+            float buttonHeight = buttonYes.getLocalBounds().height;
             float buttonX = windowSize.x / 2.f - buttonWidth / 2.f; 
             float buttonY = (800 + 150) / 2.f - buttonHeight / 2.f + 50;
-            passButton.setPosition(buttonX, buttonY);
-            takeCardssButton.setPosition(buttonX + buttonWidth + 50, buttonY);
+            buttonYes.setPosition(buttonX, buttonY);
+            buttonNo.setPosition(buttonX + buttonWidth + 50, buttonY);
             // Выделение выбранной кнопки
             if (selectedButtonIndex == 0)
             {
-                passButton.setFillColor(sf::Color::Red);
-                takeCardssButton.setFillColor(sf::Color::White);
+                buttonYes.setFillColor(sf::Color::Red);
+                buttonNo.setFillColor(sf::Color::White);
             } else {
-                passButton.setFillColor(sf::Color::White);
-                takeCardssButton.setFillColor(sf::Color::Red);
+                buttonYes.setFillColor(sf::Color::White);
+                buttonNo.setFillColor(sf::Color::Red);
             }
             // Рисование кнопок
             windowss.draw(message);
-            windowss.draw(passButton);
-            windowss.draw(takeCardssButton);
+            windowss.draw(buttonYes);
+            windowss.draw(buttonNo);
         }
         // Рисование сообщения о нажатие Escape, если флаг установлен 
         float textX_message_escape = windowSize.x / 2.f - message_escape.getLocalBounds().width / 2.f;
         float textY_message_escape = (800 + 150) / 2.f - message_escape.getLocalBounds().height / 2.f;
         message_escape.setPosition(textX_message_escape, textY_message_escape);
-        if (showMessageEscape)
-        {
-            windowss.draw(message_escape);
-            // Выделение выбранной кнопки
-            if (selectedButtonIndex == 0)
-            {
-                passButton.setFillColor(sf::Color::Red);
-                takeCardssButton.setFillColor(sf::Color::White);
-            } else {
-                passButton.setFillColor(sf::Color::White);
-                takeCardssButton.setFillColor(sf::Color::Red);
-            }
-            // Рисование кнопок
-            windowss.draw(passButton);
-            windowss.draw(takeCardssButton);
-        }
         // Рисование сообщения о неправильном выборе, если флаг установлен
         if (showInvalidMove) {
             message.setString(L"Invalid move, please try again");
@@ -520,7 +469,6 @@ int main_durakgame(sf::RenderWindow& windowss) {
             message.setPosition(textX, textY);
             windowss.draw(message);
         }
-        // Drawing code for graphics can be added here
         windowss.display();
     }
     return 0;

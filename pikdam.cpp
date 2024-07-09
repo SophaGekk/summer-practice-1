@@ -58,10 +58,6 @@ public:
         window.draw(buttonText);
     }
 
-    // // Функция для проверки, нажата ли кнопка
-    // bool isClicked(const sf::Vector2i& mousePos) {
-    //     return buttonShape.getGlobalBounds().contains(static_cast<sf::Vector2f>(mousePos));
-    // }
     // для состояния выделения
     bool isSelected;
     // Функция для установки состояния выделения
@@ -98,28 +94,53 @@ public:
             hand.push_back(cardTaken); // Добавляем карту в руку бота
         }
     }
-
-    // Функция для автоматического сброса пар карт
     void discardPairs() {
+        std::map<int, std::vector<size_t>> valueToIndices;
+
+        // Сопоставление значений карт с их индексами
+        for (size_t i = 0; i < hand.size(); ++i) {
+            valueToIndices[hand[i].value].push_back(i);
+        }
+
         std::set<int> indicesToDiscard;
 
-        // Поиск пар карт
-        for (size_t i = 0; i < hand.size(); ++i) {
-            for (size_t j = i + 1; j < hand.size(); ++j) {
-                if (hand[i].value == hand[j].value) {
-                    indicesToDiscard.insert(i);
-                    indicesToDiscard.insert(j);
+        // Поиск пар карт, исключая тройки и пары дам с дамой пик
+        for (const auto& pair : valueToIndices) {
+            const auto& indices = pair.second;
+            if (indices.size() == 2) { // Убедитесь, что есть только две карты одного ранга
+                // Проверка на пару дам, включая даму пик
+                if (pair.first == 12) { 
+                    bool hasSpades = false;
+                    for (size_t index : indices) {
+                        if (hand[index].suit == "SPADES") { 
+                            hasSpades = true;
+                            break;
+                        }
+                    }
+                    if (!hasSpades) {
+                        for (size_t index : indices) {
+                            indicesToDiscard.insert(index);
+                        }
+                    }
+                } else {
+                    for (size_t index : indices) {
+                        indicesToDiscard.insert(index);
+                    }
                 }
             }
         }
 
-        // Сброс пар карт
-        for (auto it = indicesToDiscard.rbegin(); it != indicesToDiscard.rend(); ++it) {
-            hand.erase(hand.begin() + *it);
+        // Удаление пар карт из руки
+        std::vector<Card> newHand;
+        for (size_t i = 0; i < hand.size(); ++i) {
+            if (indicesToDiscard.find(i) == indicesToDiscard.end()) {
+                newHand.push_back(hand[i]);
+            }
         }
+        hand = newHand;
     }
 };
-
+   
 bool pair_of_cards(const Card& card1, const Card& card2) {
     if((card1.suit == "SPADES" && card1.value == 12) || (card2.suit == "SPADES" && card2.value == 12))
     {
@@ -174,7 +195,7 @@ int main_pikgame(sf::RenderWindow& windowss) {
         for (const std::string& suit : suits) {
             // Исключаем даму крести
             if (value == 12 && suit == "CLUBS") {
-                continue; // Пропускаем добавление карты "Дама Пик"
+                continue; // Пропускаем добавление карты "Дама Крести"
             }
             Card card;
             card.value = value;
@@ -364,21 +385,21 @@ int main_pikgame(sf::RenderWindow& windowss) {
     if (!youWinTexture.loadFromFile("resources/YouWin.png")) {
         std::cerr << "Ошибка загрузки YouWin!" << std::endl;
     }
-    if (!gameOverTexture.loadFromFile("resources/GameOver.png")) {
-        std::cerr << "Ошибка загрузки GameOver!" << std::endl;
+    if (!gameOverTexture.loadFromFile("resources/YouLose.png")) {
+        std::cerr << "Ошибка загрузки YouLose!" << std::endl;
     }
 
 
     sf::Sprite endGameSprite;
-    endGameSprite.setPosition(760, 270);
+    // endGameSprite.setPosition(770, 270);
     
 
     // Создаем кнопки 
     Button menuButton("Return to menu", sf::Vector2f(400, 50), 30, sf::Color::Transparent, sf::Color::White, font_1);
     Button restartButton("Restart Game", sf::Vector2f(400, 50), 30, sf::Color::Transparent, sf::Color::White, font_1);
     // Установка позиции кнопок
-    menuButton.setPosition(sf::Vector2f(760, 440));
-    restartButton.setPosition(sf::Vector2f(760, 540));
+    menuButton.setPosition(sf::Vector2f(770, 640));
+    restartButton.setPosition(sf::Vector2f(770, 740));
     int selectedButtonIndex_2 = 0; // Индекс выбранной кнопки
     std::vector<Button> buttons = {menuButton, restartButton}; // Вектор всех кнопок
 
@@ -416,44 +437,24 @@ int main_pikgame(sf::RenderWindow& windowss) {
                 {
                     if (selectedButtonIndex_2 == 0) // Проверка, выбрана ли кнопка "Menu"
                     {
+                        // returnToMenu = true;
+                        // return 0;
                         return 0; break;
                     }
                     else if(selectedButtonIndex_2 == 1)// Проверка, выбрана ли кнопка "Restart"
                     {
-
+                        // Здесь код для перезапуска игры
+                        // Сброс всех игровых переменных и состояний
+                        // Пересоздание колоды карт и перераспределение карт игрокам
+                        // Сброс флагов состояния игры
+                        EndGame = false;
+                        GameOver = false;
+                        YouWin = false;
+                        // Перезапуск основного игрового цикла
+                        main_pikgame(windowss);  return 0; break;
                     }
 
                 }
-
-                // if (event.key.code == sf::Keyboard::Up)
-                // {
-                //     if (selectedButtonIndex_2 > 0) {
-                //         buttons[selectedButtonIndex_2].setSelected(false);
-                //         selectedButtonIndex_2--;
-                //         buttons[selectedButtonIndex_2].setSelected(true);
-                //     }
-                // }
-                // else if (event.key.code == sf::Keyboard::Down) {
-                //     if (selectedButtonIndex_2 < buttons.size() - 1) {
-                //         buttons[selectedButtonIndex_2].setSelected(false);
-                //         selectedButtonIndex_2++;
-                //         buttons[selectedButtonIndex_2].setSelected(true);
-                //     }
-                // } 
-                // else if (event.key.code == sf::Keyboard::Enter) {
-                //     // Обработка нажатия выбранной кнопки
-                //     // if (buttons[selectedButtonIndex].isClicked(sf::Mouse::getPosition(windowss))) {
-                //     //     // Действие для выбранной кнопки
-                //     // }
-                //     if (selectedButtonIndex_2 == 0) // Проверка, выбрана ли кнопка "Да"
-                //     {
-                //     }
-                //     else if(selectedButtonIndex_2 == 1)
-                //     {
-
-                //     }
-                // }
-
             }
             if (event.type == sf::Event::KeyPressed && (showCardSelectionMessage || showMessageEscape))
             {
@@ -813,6 +814,19 @@ int main_pikgame(sf::RenderWindow& windowss) {
         {
             return 0; break;
         }
+        if (EndGame) {
+            //окончание игры 
+            if(Player[0].hand.empty())
+            {
+                YouWin = true;
+            }
+            else
+            {
+                GameOver = true;
+            }
+            showCardSelectionMessage = false;
+            showMessageEscape = false;
+        }
         if(move_transition)
         {
             do {
@@ -828,19 +842,20 @@ int main_pikgame(sf::RenderWindow& windowss) {
             }
         }
         // Если текущий игрок - бот, выполняем его действия
-        if (currentPlayerIndex != 0) {
+        if (currentPlayerIndex != 0 && currentPlayerIndex != -1) {
             Bot& currentBot = static_cast<Bot&>(Player[currentPlayerIndex]);
             neighborIndex = findNextPlayerWithCards(Player, currentPlayerIndex);
             currentBot.takeCardFromPlayer(Player[neighborIndex]);
             currentBot.discardPairs();
             move_transition = true; // Передаем ход следующему игроку
-            if(currentPlayerIndex == 3)
+            if(neighborIndex == 0)//(currentPlayerIndex == 3)
             {
                 move_transition = false;
                 canTakeCard = true;
                 cardTaken = false;
 
-                currentPlayerIndex = (currentPlayerIndex + 1) % Player.size();
+                // currentPlayerIndex = (currentPlayerIndex + 1) % Player.size();
+                currentPlayerIndex = 0;
                 // Обновление статуса игроков
                 for (int i = 0; i < Player.size(); ++i) {
                     Player[i].isAttacker = (i == currentPlayerIndex);
@@ -860,20 +875,6 @@ int main_pikgame(sf::RenderWindow& windowss) {
         if (activePlayers == 1 || Player[0].hand.empty()) {
             // Только один игрок остался с картами, игра окончена
             EndGame = true;
-        }
-                // Проверяем, не закончилась ли игра
-        if (EndGame) {
-            //окончание игры 
-            if(Player[0].hand.empty())
-            {
-                YouWin = true;
-            }
-            else
-            {
-                GameOver = true;
-            }
-            showCardSelectionMessage = false;
-            showMessageEscape = false;
         }
         windowss.clear(Color(50,200,150));
         windowss.draw(background);
@@ -952,6 +953,17 @@ int main_pikgame(sf::RenderWindow& windowss) {
                     } else if (playerIndex == 3) {
                         back_card_sprite.setPosition(Vector2f(100, 200 + (800 / Player[playerIndex].hand.size()) * id));
                     }
+                    //neighborIndex
+                    // Если карта выбрана, она рисуется в желтый цвет
+                    if (playerIndex == neighborIndex && cardIndex == selectedCardIndexRight)
+                    {
+                        back_card_sprite.setFillColor(Color::Yellow);
+                    }
+                    else
+                    {
+                        back_card_sprite.setFillColor(Color::White);
+                    }
+
                     windowss.draw(back_card_sprite);
                     id++;
                 }
@@ -1024,27 +1036,30 @@ int main_pikgame(sf::RenderWindow& windowss) {
             float textY_wait_message = (800 + 150) / 2.f - wait_message.getLocalBounds().height / 2.f;
             wait_message.setPosition(textX_wait_message, textY_wait_message);
         }
-         // Если игра закончилась
+
+        // Если игра закончилась
+        // if (EndGame) {
+        //     if (YouWin) {
+        //         endGameSprite.setTexture(youWinTexture);
+        //     } else if (GameOver) {
+        //         endGameSprite.setTexture(gameOverTexture);
+        //     }
+        //     windowss.draw(endGameSprite);
+        // }
+
         if (EndGame) {
             // Определяем, какое изображение использовать
             if (GameOver) {
                 endGameSprite.setTexture(gameOverTexture);
-                
-                // Определяем прямоугольник размером 300x200 пикселей
-                sf::IntRect textureRect(0, 0, 300, 200);
-
-                // Устанавливаем область текстуры для спрайта
-                endGameSprite.setTextureRect(textureRect);
+                endGameSprite.setPosition(620, 20);
+                endGameSprite.setScale(1.0f, 1.0f); // Уменьшение размера спрайта 
             } else if (YouWin) {
                 // Устанавливаем текстуру для спрайта
                 endGameSprite.setTexture(youWinTexture);
-
-                // Определяем прямоугольник размером 300x200 пикселей
-                sf::IntRect textureRect(0, 0, 300, 200);
-
-                // Устанавливаем область текстуры для спрайта
-                endGameSprite.setTextureRect(textureRect);
+                endGameSprite.setPosition(600, 170);
+                endGameSprite.setScale(0.1f, 0.1f); // Уменьшение размера спрайта 
             }
+            // endGameSprite.setScale(0.1f, 0.1f); // Уменьшение размера спрайта
             // Отрисовка затемнения фона
             windowss.draw(backgroundFade);
 
