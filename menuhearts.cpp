@@ -191,7 +191,7 @@ int Menu_Hearts(sf::RenderWindow& windows)
 
     Clock clock;
     SetLayeredWindowAttributes(windows.getSystemHandle(), 100, 0, LWA_COLORKEY);
-
+    bool gameJustEnded = false;
     while (windows.isOpen())
     {
         Event event;
@@ -204,12 +204,21 @@ int Menu_Hearts(sf::RenderWindow& windows)
                 if (event.key.code == Keyboard::Down) {mymenu.MoveDown(); }  // вниз
                 if (event.key.code == Keyboard::Return)                                     // выбор
                 {
+                    if (mymenu.getSelectedMenuNumber() == 0 && !gameJustEnded)
+                    {
+                        main_hearts(windows);gameJustEnded = true;
+                    }
+                    else
+                    {
+                        gameJustEnded = false; // Сброс флага для следующего запуска игры
+                        // Обработка других пунктов меню
+                    }
                     // music.pause(); musicF.pause();
                     sound_return.play();
                         // Переходим на выбранный пункт меню
                         switch (mymenu.getSelectedMenuNumber())
                         {
-                            case 0:Game_Start_Hearts(windows);  break;
+                            // case 0:Game_Start_Hearts(windows);  break;
                             case 1:Options_Hearts(windows);     break;
                             case 2:About_Game_Hearts(windows);  break;
                             case 3:return 0; break;

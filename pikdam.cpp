@@ -1,11 +1,15 @@
 #include <stdio.h>
 #include <SFML/Graphics.hpp>
+#include <SFML/System.hpp>
 #include <iostream>
 #include <vector>
 #include <ctime>
 #include <algorithm>
 #include <set>
 #include <random>
+
+#include <fstream> // For file operations
+#include <sstream> // For string manipulation
 using namespace sf;
 
 class Card {
@@ -26,15 +30,16 @@ public:
     // virtual ~Player() {}
     // virtual void handleKeyPress(sf::Event& event, Player& currentPlayer, std::vector<Player>& Player, int& selectedCardIndex, std::vector<int>& selected_Card, bool& cardTaken, int& selectedButtonIndex, bool& showMessageEscape, bool& showCardSelectionMessage, bool& canSelectCards, bool& canTakeCard, bool& returnToMenu, int& selectedCardIndexRight, int& neighborIndex, sf::RenderWindow& windowss, sf::Text& message_ispair, int& playersChoseNo, bool& showMessageWait, int& shift) = 0;
 };
+#include <memory>
 class Button {
 public:
-    Button(const std::string& text, const sf::Vector2f& size, const int charSize, const sf::Color& bgColor, const sf::Color& textColor, sf::Font& font_1) {
+    Button(const std::string& text, const sf::Vector2f& size, const int charSize, const sf::Color& bgColor, const sf::Color& textColor, std::shared_ptr<sf::Font> font_1) {
         // Установка формы кнопки
         buttonShape.setSize(size);
         buttonShape.setFillColor(bgColor);
 
         // Установка текста кнопки
-        buttonText.setFont(font_1);
+        buttonText.setFont(*font_1);
         buttonText.setString(text);
         buttonText.setCharacterSize(charSize);
         buttonText.setFillColor(textColor);
@@ -173,6 +178,202 @@ int findNextPlayerWithCards(const std::vector<Player>& players, int currentIndex
 // Глобальная переменная для индекса текущего игрока
 int currentPlayerIndex = 0;
 
+// Структура для хранения состояния игры
+struct GameState {
+    std::vector<Card> deck;
+    std::vector<Player> players;
+    int currentPlayerIndex;
+    // ... (Add other variables related to game state)
+    int selectedCardIndex;
+    int selectedCardIndexRight;
+    std::vector<int> selected_Card;
+    bool messege_win_player;
+    // Флаг для отображения текста выбора карт
+    bool showCardSelectionMessage;
+    // Индекс выбранной кнопки (0 - Да, 1 - Нет)
+    int selectedButtonIndex;
+    // Флаг для отображения текста выхода из игры
+    bool showMessageEscape;
+    // Флаг для отображения текста выхода в меню
+    bool returnToMenu;
+    // Переменная для отслеживания количества игроков, выбравших "нет"
+    int playersChoseNo; 
+    bool showMessageWait;
+    bool Taking_cards; // Флаг для проверки, взял ли игрок карту
+    bool canSelectCards; // Можно ли выбирать карты
+    bool canTakeCard; // Можно ли брать карту у противника
+    bool cardTaken; // Флаг, указывающий на то, что карта была взята
+    bool move_transition;
+    bool crdpair;
+    bool EndGame; //окончание игры
+    bool GameOver; //проигрыш
+    bool YouWin; //выигрыш
+    int neighborIndex;
+    int activePlayers;
+    int selectedButtonIndex_2; // Индекс выбранной кнопки
+
+    std::map<std::string, sf::Texture> textures; 
+};
+
+// Функция для сохранения состояния игры в файл
+void saveGameState(const GameState& state, const std::string& filename) {
+    std::ofstream outfile(filename);
+    if (outfile.is_open()) {
+        // Сохранение колоды
+        outfile << state.deck.size() << std::endl;
+        for (const auto& card : state.deck) {
+            outfile << card.value << " " << card.suit << std::endl;
+        }
+        // Сохранение игроков
+        outfile << state.players.size() << std::endl;
+        for (const auto& player : state.players) {
+            outfile << player.hand.size() << std::endl;
+            for (const auto& card : player.hand) {
+                outfile << card.value << " " << card.suit << std::endl;
+            }
+            outfile << player.isAttacker << " " << player.isDefender << " " << player.hasWon << std::endl;
+        }
+        // Сохранение других переменных состояния игры
+        outfile << state.currentPlayerIndex << std::endl;
+        // ... (Сохранение других переменных)
+        outfile << state.selectedCardIndex << std::endl;
+        outfile << state.selectedCardIndexRight << std::endl;
+        outfile << state.selectedCardIndex << std::endl;
+        outfile << state.messege_win_player << std::endl;
+
+        // Сохранение selected_Card
+        outfile << state.selected_Card.size() << std::endl;
+        for (const auto& index_card : state.selected_Card) {
+            outfile << index_card << std::endl;
+        }
+
+        outfile << state.showCardSelectionMessage << std::endl;
+        outfile << state.selectedButtonIndex << std::endl;
+        outfile << state.showMessageEscape << std::endl;
+        outfile << state.returnToMenu << std::endl;
+        outfile << state.playersChoseNo << std::endl;
+        outfile << state.showMessageWait << std::endl;
+        outfile << state.Taking_cards << std::endl;
+        outfile << state.canSelectCards << std::endl;
+        outfile << state.canTakeCard << std::endl;
+        outfile << state.cardTaken << std::endl;
+        outfile << state.move_transition << std::endl;
+        outfile << state.crdpair << std::endl;
+        outfile << state.EndGame << std::endl;
+        outfile << state.GameOver << std::endl;
+        outfile << state.YouWin << std::endl;
+        outfile << state.neighborIndex << std::endl;
+        outfile << state.activePlayers << std::endl;
+        outfile << state.selectedButtonIndex_2 << std::endl;
+        
+        outfile.close();
+    } else {
+        std::cerr << "Ошибка открытия файла для сохранения: " << filename << std::endl;
+    }
+}
+
+// Функция для загрузки состояния игры из файла
+GameState loadGameState(const std::string& filename) {
+    GameState state;
+    std::ifstream infile(filename);
+    if (infile.is_open()) {
+        // Загрузка колоды
+        int deckSize;
+        infile >> deckSize;
+        state.deck.resize(deckSize);
+        for (auto& card : state.deck) {
+            int value;
+            std::string suit;
+            infile >> value >> suit;
+            card.value = value;
+            card.suit = suit;
+            // Загрузка текстуры карты (вам нужно реализовать эту часть)
+        }
+        // Загрузка игроков
+        int playerCount;
+        infile >> playerCount;
+        state.players.resize(playerCount);
+        for (auto& player : state.players) {
+            int handSize;
+            infile >> handSize;
+                        player.hand.resize(handSize);
+            for (auto& card : player.hand) {
+                int value;
+                std::string suit;
+                infile >> value >> suit;
+                card.value = value;
+                card.suit = suit;
+                // Загрузка текстуры карты (вам нужно реализовать эту часть)
+            }
+            infile >> player.isAttacker >> player.isDefender >> player.hasWon;
+        }
+        // Загрузка других переменных состояния игры
+        infile >> state.currentPlayerIndex;
+        // ... (Загрузка других переменных)
+        infile >> state.selectedCardIndex;
+        infile >> state.selectedCardIndexRight;
+        infile >> state.selectedCardIndex;
+        infile >> state.messege_win_player;
+/////////////////////////////////////////////////////
+        // Сохранение selected_Card
+        int selected_CardSize;
+        infile >> selected_CardSize;
+        state.selected_Card.resize(selected_CardSize);
+        for (int i = 0; i < selected_CardSize; ++i) {
+            int index_card;
+            infile >> index_card;
+            state.selected_Card[i] = index_card; 
+        }
+        infile >> state.showCardSelectionMessage;
+        infile >> state.selectedButtonIndex;
+        infile >> state.showMessageEscape;
+        infile >> state.returnToMenu;
+        infile >> state.playersChoseNo;
+        infile >> state.showMessageWait;
+        infile >> state.Taking_cards;
+        infile >> state.canSelectCards;
+        infile >> state.canTakeCard;
+        infile >> state.cardTaken;
+        infile >> state.move_transition;
+        infile >> state.crdpair;
+        infile >> state.EndGame;
+        infile >> state.GameOver;
+        infile >> state.YouWin;
+        infile >> state.neighborIndex;
+        infile >> state.activePlayers;
+        infile >> state.selectedButtonIndex_2;
+
+        infile.close();
+    } else {
+        std::cerr << "Ошибка открытия файла для загрузки: " << filename << std::endl;
+    }
+    return state;
+}
+
+// Функция для вывода карты в консоль
+void printCard(const Card& card) {
+    std::cout << card.value << " " << card.suit << std::endl;
+}
+
+// Функция для вывода колоды в консоль
+void printDeck(const std::vector<Card>& deck) {
+    std::cout << "Колода:" << std::endl;
+    for (const auto& card : deck) {
+        printCard(card);
+    }
+}
+
+// Функция для вывода руки игрока в консоль
+void printHand(const Player& player) {
+    std::cout << "Рука игрока:" << std::endl;
+    for (const auto& card : player.hand) {
+        printCard(card);
+    }
+}
+std::shared_ptr<sf::Font> font_1 = std::make_shared<sf::Font>();
+// if (!font_1->loadFromFile("resources/ffont.ttf")) {
+//     std::cerr << "Ошибка загрузки шрифта!" << std::endl;
+// }
 int main_pikgame(sf::RenderWindow& windowss) {
 
     srand(time(0));
@@ -186,87 +387,118 @@ int main_pikgame(sf::RenderWindow& windowss) {
     background.setTexture(&tableTexture);
     background.setPosition(Vector2f(0,0));
 
+    GameState gameState; // Создание объекта для хранения состояния игры
+
+    // Загрузка предыдущего состояния игры из файла (если он существует)
+    std::string saveFilename = "pikgame_save.txt";
+    gameState = loadGameState(saveFilename);
 
     std::vector<std::string> suits = {"HEARTS", "DIAMONDS", "CLUBS", "SPADES"};
     // основная колода 
     std::vector<Card> deck;
     sf::Texture CardTexture;
-    for (int value = 6; value <= 14; ++value) {
-        for (const std::string& suit : suits) {
-            // Исключаем даму крести
-            if (value == 12 && suit == "CLUBS") {
-                continue; // Пропускаем добавление карты "Дама Крести"
-            }
-            Card card;
-            card.value = value;
-            card.suit = suit;
-            std::string filename = "resources/" + std::to_string(value) + suit + ".png";
-            if (!CardTexture.loadFromFile(filename)) { 
-                std::cerr << "Ошибка загрузки текстуры: " << filename << std::endl; 
-            } else {
-                card.texture = CardTexture; 
-                card.sprite.setTexture(card.texture);
-                deck.push_back(card);
-            }
-        }
-    }
-
-    // Перемешивание колоды
-    std::random_device rd;
-    std::mt19937 g(rd());
-    std::shuffle(deck.begin(), deck.end(), g);
-
-
-    // Инициализация игроков
-    // std::vector<Player> Player;
-    // Player.push_back(HumanPlayer()); // Предполагаем, что первый игрок - человек
-    // for (int i = 1; i < 4; ++i) {
-    //     Player.push_back(Bot()); // Остальные игроки - боты
-    // }
     std::vector<Player> Player(4);
-    Player[0].isAttacker = true;
-    Player[0].isDefender = false;
-    Player[1].isAttacker = false;
-    Player[1].isDefender = false;
-    Player[2].isAttacker = false;
-    Player[2].isDefender = false;
-    Player[3].isAttacker = false;
-    Player[3].isDefender = false;
-    Bot& bot_1 = static_cast<Bot&>(Player[1]);
-    Bot& bot_2 = static_cast<Bot&>(Player[2]);
-    Bot& bot_3 = static_cast<Bot&>(Player[3]);
-
-    //раздача карт на руки
-    // for (int i = 0; i < 13; ++i) //для от 2
-    for (int i = 0; i < 9; ++i)
+    // Если файл не найден, начинаем новую игру
+    if (gameState.deck.empty() && gameState.players.empty()) 
     {
-        if (deck.empty()) {
-            std::cerr << "Колода пуста. Невозможно продолжить раздачу карт." << std::endl;
-            break; // Выход из цикла, если колода пуста
+        for (int value = 6; value <= 14; ++value) {
+            for (const std::string& suit : suits) {
+                // Исключаем даму крести
+                if (value == 12 && suit == "CLUBS") {
+                    continue; // Пропускаем добавление карты "Дама Крести"
+                }
+                Card card;
+                card.value = value;
+                card.suit = suit;
+                std::string filename = "resources/" + std::to_string(value) + suit + ".png";
+                if (!CardTexture.loadFromFile(filename)) { 
+                    std::cerr << "Ошибка загрузки текстуры: " << filename << std::endl; 
+                } else {
+                    card.texture = CardTexture; 
+                    card.sprite.setTexture(card.texture);
+                    deck.push_back(card);
+                }
+            }
         }
-        Player[0].hand.push_back(deck.back());
-        deck.pop_back();
 
-        if (deck.empty()) {
-            std::cerr << "Колода пуста. Невозможно продолжить раздачу карт." << std::endl;
-            break;
-        }
-        Player[1].hand.push_back(deck.back());
-        deck.pop_back();
+        // Перемешивание колоды
+        std::random_device rd;
+        std::mt19937 g(rd());
+        std::shuffle(deck.begin(), deck.end(), g);
+        Player[0].isAttacker = true;
+        Player[0].isDefender = false;
+        Player[1].isAttacker = false;
+        Player[1].isDefender = false;
+        Player[2].isAttacker = false;
+        Player[2].isDefender = false;
+        Player[3].isAttacker = false;
+        Player[3].isDefender = false;
+        Bot& bot_1 = static_cast<Bot&>(Player[1]);
+        Bot& bot_2 = static_cast<Bot&>(Player[2]);
+        Bot& bot_3 = static_cast<Bot&>(Player[3]);
 
-        if (deck.empty()) {
-            std::cerr << "Колода пуста. Невозможно продолжить раздачу карт." << std::endl;
-            break;
-        }
-        Player[2].hand.push_back(deck.back());
-        deck.pop_back();
+        //раздача карт на руки
+        // for (int i = 0; i < 13; ++i) //для от 2
+        for (int i = 0; i < 9; ++i)
+        {
+            if (deck.empty()) {
+                std::cerr << "Колода пуста. Невозможно продолжить раздачу карт." << std::endl;
+                break; // Выход из цикла, если колода пуста
+            }
+            Player[0].hand.push_back(deck.back());
+            deck.pop_back();
 
-        if (deck.empty()) {
-            std::cerr << "Колода пуста. Невозможно продолжить раздачу карт." << std::endl;
-            break;
+            if (deck.empty()) {
+                std::cerr << "Колода пуста. Невозможно продолжить раздачу карт." << std::endl;
+                break;
+            }
+            Player[1].hand.push_back(deck.back());
+            deck.pop_back();
+
+            if (deck.empty()) {
+                std::cerr << "Колода пуста. Невозможно продолжить раздачу карт." << std::endl;
+                break;
+            }
+            Player[2].hand.push_back(deck.back());
+            deck.pop_back();
+
+            if (deck.empty()) {
+                std::cerr << "Колода пуста. Невозможно продолжить раздачу карт." << std::endl;
+                break;
+            }
+            Player[3].hand.push_back(deck.back());
+            deck.pop_back();
         }
-        Player[3].hand.push_back(deck.back());
-        deck.pop_back();
+
+        gameState.currentPlayerIndex = 0; // Начало с первого игрока
+        bot_1.discardPairs();
+        bot_2.discardPairs();
+        bot_3.discardPairs();
+    }
+    else {
+        // Загрузка состояния из файла
+        // Инициализация графики, шрифтов, текстур и других элементов игры
+        for (auto& card : gameState.deck) {
+            std::string filename = "resources/" + std::to_string(card.value) + card.suit + ".png";
+            sf::Texture texture;
+            if (!texture.loadFromFile(filename)) {
+                std::cerr << "Ошибка загрузки текстуры: " << filename << std::endl;
+            } else {
+                gameState.textures[filename] = texture;
+            }
+        }
+
+        // Установка текстур и спрайтов для карт в руках игроков
+        for (auto& player : gameState.players) {
+            for (auto& card : player.hand) {
+                std::string filename = "resources/" + std::to_string(card.value) + card.suit + ".png";
+                card.texture = gameState.textures[filename];
+                card.sprite.setTexture(card.texture);
+            }
+        }
+
+        // Инициализация позиций игроков, размеров и других графических элементов
+        // ...
     }
 
     int selectedCardIndex = 0;
@@ -274,15 +506,18 @@ int main_pikgame(sf::RenderWindow& windowss) {
 
     std::vector<int> selected_Card(0);
 
-    
-    sf::Font font_1;
-    if (!font_1.loadFromFile("resources/ffont.ttf"))
-    {
+    // std::shared_ptr<sf::Font> font_1 = std::make_shared<sf::Font>();
+    if (!font_1->loadFromFile("resources/ffont.ttf")) {
         std::cerr << "Ошибка загрузки шрифта!" << std::endl;
     }
+    // sf::Font font_1;
+    // if (!font_1.loadFromFile("resources/ffont.ttf"))
+    // {
+    //     std::cerr << "Ошибка загрузки шрифта!" << std::endl;
+    // }
     bool messege_win_player = false;
     sf::Text messege_winplayer;
-    messege_winplayer.setFont(font_1);
+    messege_winplayer.setFont(*font_1);
     messege_winplayer.setCharacterSize(24);
     messege_winplayer.setFillColor(sf::Color::White);
     messege_winplayer.setPosition(100.f, 100.f);
@@ -291,7 +526,7 @@ int main_pikgame(sf::RenderWindow& windowss) {
     messege_winplayer.setString(L"The Player Won ");
 
     sf::Text message_ispair;
-    message_ispair.setFont(font_1);
+    message_ispair.setFont(*font_1);
     message_ispair.setCharacterSize(24);
     message_ispair.setFillColor(sf::Color::White);
     message_ispair.setPosition(100.f, 100.f);
@@ -301,7 +536,7 @@ int main_pikgame(sf::RenderWindow& windowss) {
     message_ispair.setString(L"Oh, you will not be able to discard these cards...");
 
     sf::Text message;
-    message.setFont(font_1);
+    message.setFont(*font_1);
     message.setCharacterSize(30);
     message.setFillColor(sf::Color::White);
     message.setPosition(100.f, 100.f);
@@ -311,7 +546,7 @@ int main_pikgame(sf::RenderWindow& windowss) {
      message.setString("Is there anything to reset?");
     // Создание кнопок "Да" и "Нет"
     sf::Text buttonYes;
-    buttonYes.setFont(font_1);
+    buttonYes.setFont(*font_1);
     // buttonYes.setString("Да");
     buttonYes.setString("Yes");
     buttonYes.setCharacterSize(24);
@@ -319,7 +554,7 @@ int main_pikgame(sf::RenderWindow& windowss) {
     buttonYes.setPosition(200.f, 200.f);
 
     sf::Text buttonNo;
-    buttonNo.setFont(font_1);
+    buttonNo.setFont(*font_1);
     // buttonNo.setString("Нет");
     buttonNo.setString("No");
     buttonNo.setCharacterSize(24);
@@ -332,7 +567,7 @@ int main_pikgame(sf::RenderWindow& windowss) {
     int selectedButtonIndex = 0;
 
     sf::Text message_escape;
-    message_escape.setFont(font_1);
+    message_escape.setFont(*font_1);
     message_escape.setCharacterSize(24);
     message_escape.setFillColor(sf::Color::White);
     message_escape.setPosition(100.f, 100.f);
@@ -352,7 +587,7 @@ int main_pikgame(sf::RenderWindow& windowss) {
     bool showMessageWait = false;
     // Здесь код для отображения сообщения "Ожидаем других игроков: количество"
     sf::Text wait_message;
-    wait_message.setFont(font_1);
+    wait_message.setFont(*font_1);
     wait_message.setCharacterSize(30);
     wait_message.setFillColor(sf::Color::White);
     wait_message.setPosition(100.f, 100.f);
@@ -391,9 +626,7 @@ int main_pikgame(sf::RenderWindow& windowss) {
 
 
     sf::Sprite endGameSprite;
-    // endGameSprite.setPosition(770, 270);
     
-
     // Создаем кнопки 
     Button menuButton("Return to menu", sf::Vector2f(400, 50), 30, sf::Color::Transparent, sf::Color::White, font_1);
     Button restartButton("Restart Game", sf::Vector2f(400, 50), 30, sf::Color::Transparent, sf::Color::White, font_1);
@@ -402,11 +635,12 @@ int main_pikgame(sf::RenderWindow& windowss) {
     restartButton.setPosition(sf::Vector2f(770, 740));
     int selectedButtonIndex_2 = 0; // Индекс выбранной кнопки
     std::vector<Button> buttons = {menuButton, restartButton}; // Вектор всех кнопок
+    sf::Clock gameTimer; // Создание таймера
 
 ///////////// боты скидывают карты
-    bot_1.discardPairs();
-    bot_2.discardPairs();
-    bot_3.discardPairs();
+    // bot_1.discardPairs();
+    // bot_2.discardPairs();
+    // bot_3.discardPairs();
     // Game Loop
     while (windowss.isOpen()) 
     {
@@ -420,6 +654,12 @@ int main_pikgame(sf::RenderWindow& windowss) {
             {
                 showMessageEscape = true;
                 showCardSelectionMessage = false;
+            }
+            if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F5) {
+                // Сохранение состояния игры
+                saveGameState(gameState, saveFilename);
+                std::cout << "Состояние игры сохранено в " << saveFilename << std::endl;
+                
             }
             if (event.type == sf::Event::KeyPressed && EndGame)
             {
@@ -438,8 +678,8 @@ int main_pikgame(sf::RenderWindow& windowss) {
                     if (selectedButtonIndex_2 == 0) // Проверка, выбрана ли кнопка "Menu"
                     {
                         // returnToMenu = true;
-                        // return 0;
-                        return 0; break;
+                        return 0;
+                        break;
                     }
                     else if(selectedButtonIndex_2 == 1)// Проверка, выбрана ли кнопка "Restart"
                     {
@@ -552,7 +792,11 @@ int main_pikgame(sf::RenderWindow& windowss) {
                 {
                         showCardSelectionMessage = false;  
                 } 
-
+                    // Обновление индекса после удаления
+                if (selectedCardIndexRight >= Player[neighborIndex].hand.size())
+                {
+                    selectedCardIndexRight = Player[neighborIndex].hand.size() - 1;
+                }
                 selected_Card.clear(); // Очистка выбора карт
                 crdpair = true;
 
@@ -639,6 +883,11 @@ int main_pikgame(sf::RenderWindow& windowss) {
                                     {
                                         Player[currentPlayerIndex].hand.erase(Player[currentPlayerIndex].hand.begin() + index);
                                     }
+                                    // Обновление индекса после удаления
+                                    if (selectedCardIndex >= Player[currentPlayerIndex].hand.size() &&  !Player[currentPlayerIndex].hand.empty())
+                                    {
+                                        selectedCardIndex = Player[currentPlayerIndex].hand.size() - 1;
+                                    }
                                     // Возврат к выбору кнопок
                                     showCardSelectionMessage = true;
 
@@ -685,9 +934,6 @@ int main_pikgame(sf::RenderWindow& windowss) {
             {
             switch (event.type)
             {
-                // case sf::Event::Closed:
-                //     windowss.close();
-                //     break;
                 case sf::Event::KeyPressed:
                 
     //             if (dynamic_cast<HumanPlayer*>(Player[currentPlayerIndex]) != nullptr) {
@@ -1036,17 +1282,6 @@ int main_pikgame(sf::RenderWindow& windowss) {
             float textY_wait_message = (800 + 150) / 2.f - wait_message.getLocalBounds().height / 2.f;
             wait_message.setPosition(textX_wait_message, textY_wait_message);
         }
-
-        // Если игра закончилась
-        // if (EndGame) {
-        //     if (YouWin) {
-        //         endGameSprite.setTexture(youWinTexture);
-        //     } else if (GameOver) {
-        //         endGameSprite.setTexture(gameOverTexture);
-        //     }
-        //     windowss.draw(endGameSprite);
-        // }
-
         if (EndGame) {
             // Определяем, какое изображение использовать
             if (GameOver) {
@@ -1081,6 +1316,15 @@ int main_pikgame(sf::RenderWindow& windowss) {
             restartButton.draw(windowss);
         }
         // Drawing code for graphics can be added here
+
+        // Обновление объекта GameState
+        // updateGameState(gameState); // Добавьте здесь функцию обновления состояния игры
+        // Сохранение изменений в GameState (если необходимо)
+        // Например, если вы хотите сохранять состояние игры каждую секунду:
+        if (gameTimer.getElapsedTime().asSeconds() >= 1.0f) {
+            saveGameState(gameState, saveFilename);
+            gameTimer.restart();
+        }
         windowss.display();
         
     }

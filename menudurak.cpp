@@ -189,7 +189,7 @@ int Menu_Durak(sf::RenderWindow& window)
 
     Clock clock;
     SetLayeredWindowAttributes(window.getSystemHandle(), 100, 0, LWA_COLORKEY);
-
+    bool gameJustEnded = false;
     while (window.isOpen())
     {
         Event event;
@@ -202,12 +202,21 @@ int Menu_Durak(sf::RenderWindow& window)
                 if (event.key.code == Keyboard::Down) {mymenu.MoveDown(); }  // вниз
                 if (event.key.code == Keyboard::Return)                                     // выбор
                 {
+                    if (mymenu.getSelectedMenuNumber() == 0 && !gameJustEnded)
+                    {
+                        main_durakgame(window);gameJustEnded = true;
+                    }
+                    else
+                    {
+                        gameJustEnded = false; // Сброс флага для следующего запуска игры
+                        // Обработка других пунктов меню
+                    }
                     // music.pause(); musicF.pause();
                     sound_return.play();
                         // Переходим на выбранный пункт меню
                         switch (mymenu.getSelectedMenuNumber())
                         {
-                            case 0:main_durakgame(window);  break;
+                            // case 0:main_durakgame(window);  break;
                             case 1:Options_Durak(window);     break;
                             case 2:About_Game_Durak(window);  break;
                             case 3:return 0; break;
