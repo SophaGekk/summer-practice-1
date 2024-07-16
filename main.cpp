@@ -7,6 +7,7 @@
 #include "menupik.h"
 #include "menuhearts.h"
 #include "menudurak.h"
+#include "menusolitaire.h"
 
 using namespace sf;
 
@@ -27,73 +28,6 @@ void InitTexts(Text& mtext, float xpos, float ypos, String str, int size_font=60
 
     mtext.setPosition(xpos, ypos);
 
-}
-
-//Настройки
-void Options()
-{
-    RenderWindow Options(VideoMode::getDesktopMode(), L"Настройки", Style::Fullscreen);
-
-    RectangleShape background_opt(Vector2f(1920, 1080));
-    Texture texture_opt;
-    if (!texture_opt.loadFromFile("cards/6SPADES.png")) exit(2);
-
-    background_opt.setTexture(&texture_opt);
-    while (Options.isOpen())
-    {
-        Event event_opt;
-        while (Options.pollEvent(event_opt))
-        {
-            if (event_opt.type == Event::Closed) Options.close();
-            if (event_opt.type == Event::KeyPressed)
-            {
-                if (event_opt.key.code == Keyboard::Escape) Options.close();
-            }
-        }
-        Options.clear();
-        Options.draw(background_opt);
-        Options.display();
-    }
-
-}
-
-// Об Игре
-void About_Game()
-{
-    RenderWindow About(VideoMode::getDesktopMode(), L"Правила игры", Style::Fullscreen);
-
-    RectangleShape background_ab(Vector2f(VideoMode::getDesktopMode().width, VideoMode::getDesktopMode().height));
-    Texture texture_ab;
-
-    if (!texture_ab.loadFromFile("12SPADES.png")) exit(3);
-
-    background_ab.setTexture(&texture_ab);
-
-    // Шрифт для названия экрана
-    Font font;
-
-    if (!font.loadFromFile("resources/troika.otf")) exit(6);
-    // Текст с названием экрана
-    Text Titul;
-    Titul.setFont(font);
-    InitTexts(Titul, 500, 50, L"Описание игры", 120, Color(237, 147, 0), 3);
-
-    while (About.isOpen())
-    {
-        Event event_play;
-        while (About.pollEvent(event_play))
-        {
-            if (event_play.type == Event::Closed) About.close();
-            if (event_play.type == Event::KeyPressed)
-            {
-                if (event_play.key.code == Keyboard::Escape) About.close();
-            }
-        }
-        About.clear();
-        About.draw(background_ab);
-        // About.draw(Titul);
-        About.display();
-    }
 }
 
 int main() 
@@ -207,7 +141,7 @@ int main()
                         {
                             case 0:Menu_pik_Dam(window);  break; //пиковая дама
                             case 1:Menu_Durak(window);     break; //дурак
-                            case 2:About_Game();  break; //пасьянс
+                            case 2:Menu_solitaire(window);  break; //пасьянс
                             case 3:Menu_Hearts(window);  break; //черви
                             case 4:window.close(); break; //выход
                         }

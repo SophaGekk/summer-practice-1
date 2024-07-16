@@ -2,35 +2,24 @@
 
 #include <stdio.h>
 #include <SFML/Graphics.hpp>
+#include <SFML/System.hpp>
 #include <iostream>
 #include <vector>
 #include <ctime>
 #include <algorithm>
 #include <set>
+#include <random>
 
-using namespace sf;
-
-
-class Cards {
+class Card {
 public:
-    int rank; // 6-14 (6 to Ace)
-    std::string suit = ""; //  (Spades, Clubs, Diamonds, Hearts)
+    int value; // 6-14 (6 to Ace)
+    std::string suit; //  (Spades, Clubs, Diamonds, Hearts)
     sf::Texture texture; 
     sf::Sprite sprite; 
-    bool isTaking = false; //для реализации взятия карты
 };
-
-class Players {
-public:
-    std::vector<Cards> hand;
-    bool isAttacker;
-    bool isDefender;
-    
-};
-
 class Button {
 public:
-    Button(const std::string& text, const sf::Vector2f& size, const int charSize, const sf::Color& bgColor, const sf::Color& textColor, sf::Font& font_1) {
+    Button(const std::string& text, const sf::Vector2f& size, const int charSize, const sf::Color& bgColor, const sf::Color& textColor, sf::Font font_1) {
         // Установка формы кнопки
         buttonShape.setSize(size);
         buttonShape.setFillColor(bgColor);
@@ -76,16 +65,4 @@ private:
     sf::RectangleShape buttonShape;
     sf::Text buttonText;
 };
-
-int gameMenu(sf::RenderWindow& Play);
-
-void share_cards(std::vector<Players>& players, int num_of_player, std::vector<int> selected_cards);
-int main_hearts(sf::RenderWindow& window);
-void disable_card_selection(Players& player,std::vector<int> selected_cards);
-void enable_card_selection(Players& player);
-void draw_cards_except_0(std::vector<Players>& players, sf::RenderWindow& windowss);
-void handlePassingCards(sf::RenderWindow& windowss, std::vector<Players>& players, Event event);
-void handleFirstRound(sf::RenderWindow& windowss, std::vector<Players>& players, Event event);
-void handleHeratsBroken(sf::RenderWindow& windowss, std::vector<Players>& players, Event event);
-void handleNormalRound(sf::RenderWindow& windowss, std::vector<Players>& players, Event event);
-void check_bito(std::vector<Players>& players, Cards bito[4]);
+int main_solitare(sf::RenderWindow& windowss);
