@@ -1,5 +1,6 @@
 
 #include <stdio.h>
+#include <fstream>
 #include <SFML/Graphics.hpp>
 #include <iostream>
 #include <vector>
@@ -8,6 +9,7 @@
 #include <set>
 #include "gameMenu.h"
 #include "Hearts.h"
+#include <filesystem> 
 using namespace sf;
 
 int selectedCardsIndex = 0;
@@ -21,17 +23,19 @@ static bool show3CardSelectionMessage = false; // это для выбора 3 �
 static int selected3ButtonIndex = 0;
 int selectedloseButtonIndex = 0;
 //введём штрафные очки для всех 4 игроков
-int penalty_points_0 = 0;
-int penalty_points_1 = 0;
-int penalty_points_2 = 0;
-int penalty_points_3 = 0;
+int penalty_points[4];
+
 sf::Texture WinTexture;
 sf::Texture LoseTexture;
+bool showSaveLoadMenu = false;
+int selectedSaveButtonIndex = 0;
+// Флаг для отображения меню
+int selectedsaveyesnobuttonindex = 0;
 
 //сделаем раздачу карт на руки игрокам
 void shuffle(std::vector<Players>& players)
 {
-      std::vector<std::string> suits = {"HEARTS", "DIAMONDS", "SPADES", "CLUBS"};
+    std::vector<std::string> suits = {"HEARTS", "DIAMONDS", "SPADES", "CLUBS"};
     //основная колода 
     std::vector<Cards> deck;
     sf::Texture CardsTexture;
@@ -46,6 +50,7 @@ void shuffle(std::vector<Players>& players)
             } else {
                 card.texture = CardsTexture;
                 card.sprite.setTexture(card.texture);
+                card.sprite.setScale(0.6f, 0.6f); // Уменьшение размера спрайта 
                 // RectangleShape CardsShape(Vector2f(77,108));
                 // CardsShape.setTexture(&CardsTexture);
             }
@@ -86,7 +91,7 @@ void check_bito(std::vector<Players>& players, Cards bito[4])
     }
     if ((bito[0].rank >= bito[1].rank) && (bito[0].rank >= bito[2].rank) && (bito[0].rank >= bito[3].rank))
     {
-        penalty_points_0 = penalty_points_0+current_points;
+        penalty_points[0] = penalty_points[0]+current_points;
         start_player = 0;
         for (int i = 0; i < 4; i++) {
                 // обнулим бито
@@ -96,7 +101,7 @@ void check_bito(std::vector<Players>& players, Cards bito[4])
     }
     else if ((bito[1].rank >= bito[0].rank) && (bito[1].rank >= bito[2].rank) && (bito[1].rank >= bito[3].rank))
     {
-        penalty_points_1 = penalty_points_1 + current_points;
+        penalty_points[1] = penalty_points[1] + current_points;
         start_player = 1;
         for (int i = 0; i < 4; i++) {
                 // обнулим бито
@@ -106,7 +111,7 @@ void check_bito(std::vector<Players>& players, Cards bito[4])
     }
     else if ((bito[2].rank >= bito[1].rank) && (bito[2].rank >= bito[0].rank) && (bito[2].rank >= bito[3].rank))
     {
-        penalty_points_2 = penalty_points_2 + current_points;
+        penalty_points[2] = penalty_points[2] + current_points;
         start_player = 2;
         for (int i = 0; i < 4; i++) {
                 // обнулим бито
@@ -117,7 +122,7 @@ void check_bito(std::vector<Players>& players, Cards bito[4])
     else if ((bito[3].rank >= bito[1].rank) && (bito[3].rank >= bito[2].rank) && (bito[3].rank >= bito[0].rank))
     {
         start_player = 3;
-        penalty_points_3 = penalty_points_3 + current_points;
+        penalty_points[3] = penalty_points[3] + current_points;
         for (int i = 0; i < 4; i++) {
                 // обнулим бито
                 Cards card;
@@ -270,32 +275,32 @@ void draw_cards(std::vector<Players>& players, sf::RenderWindow& windowss) {
         ++id_P0;
     }
     // далее напишем отрисовку четырех карт на столе 
-    if (bito[0].suit != "") {
+    if (bito[0].suit != "" && bito[0].suit != "0") {
         bito[0].sprite.setTexture(bito[0].texture);
         bito[0].sprite.setPosition(Vector2f(920, 595));
         windowss.draw(bito[0].sprite);
     }
-    if (bito[1].suit != "") {
+    if (bito[1].suit != "" && bito[1].suit != "0") {
         bito[1].sprite.setTexture(bito[1].texture);
         bito[1].sprite.setPosition(Vector2f(880, 485));
         windowss.draw(bito[1].sprite);
     }
-    if (bito[2].suit != "") {
+    if (bito[2].suit != "" && bito[2].suit != "0") {
         bito[2].sprite.setTexture(bito[2].texture);
         bito[2].sprite.setPosition(Vector2f(920, 375));
         windowss.draw(bito[2].sprite);
     }
-    if (bito[3].suit != "") {
+    if (bito[3].suit != "" && bito[3].suit != "0") {
         bito[3].sprite.setTexture(bito[3].texture);
         bito[3].sprite.setPosition(Vector2f(960, 485));
         windowss.draw(bito[3].sprite);
     }
     // Обновление значений текстов
-        text_bottom.setString("Penalty Points: " + std::to_string(penalty_points_0));
-        text_left.setString("Penalty Points: " + std::to_string(penalty_points_1));
+        text_bottom.setString("Penalty Points: " + std::to_string(penalty_points[0]));
+        text_left.setString("Penalty Points: " + std::to_string(penalty_points[1]));
         text_left.setRotation(90);
-        text_top.setString("Penalty Points: " + std::to_string(penalty_points_2));
-        text_right.setString("Penalty Points: " + std::to_string(penalty_points_3));
+        text_top.setString("Penalty Points: " + std::to_string(penalty_points[2]));
+        text_right.setString("Penalty Points: " + std::to_string(penalty_points[3]));
         text_right.setRotation(90);
         windowss.draw(text_bottom);
         windowss.draw(text_left);
@@ -366,32 +371,32 @@ void draw_cards_except_0(std::vector<Players>& players, sf::RenderWindow& window
     }
 
     // далее напишем отрисовку четырех карт на столе 
-    if (bito[0].suit != "") {
+    if (bito[0].suit != "" && bito[0].suit != "0") {
         bito[0].sprite.setTexture(bito[0].texture);
         bito[0].sprite.setPosition(Vector2f(920, 595));
         windowss.draw(bito[0].sprite);
     }
-    if (bito[1].suit != "") {
+    if (bito[1].suit != "" && bito[1].suit != "0") {
         bito[1].sprite.setTexture(bito[1].texture);
         bito[1].sprite.setPosition(Vector2f(880, 485));
         windowss.draw(bito[1].sprite);
     }
-    if (bito[2].suit != "") {
+    if (bito[2].suit != "" && bito[2].suit != "0") {
         bito[2].sprite.setTexture(bito[2].texture);
         bito[2].sprite.setPosition(Vector2f(920, 375));
         windowss.draw(bito[2].sprite);
     }
-    if (bito[3].suit != "") {
+    if (bito[3].suit != "" && bito[3].suit != "0") {
         bito[3].sprite.setTexture(bito[3].texture);
         bito[3].sprite.setPosition(Vector2f(960, 485));
         windowss.draw(bito[3].sprite);
     }
     // Обновление значений текстов
-        text_bottom.setString("Penalty Points: " + std::to_string(penalty_points_0));
-        text_left.setString("Penalty Points: " + std::to_string(penalty_points_1));
+        text_bottom.setString("Penalty Points: " + std::to_string(penalty_points[0]));
+        text_left.setString("Penalty Points: " + std::to_string(penalty_points[1]));
         text_left.setRotation(90);
-        text_top.setString("Penalty Points: " + std::to_string(penalty_points_2));
-        text_right.setString("Penalty Points: " + std::to_string(penalty_points_3));
+        text_top.setString("Penalty Points: " + std::to_string(penalty_points[2]));
+        text_right.setString("Penalty Points: " + std::to_string(penalty_points[3]));
         text_right.setRotation(90);
         windowss.draw(text_bottom);
         windowss.draw(text_left);
@@ -477,7 +482,7 @@ void handlePassingCards(sf::RenderWindow& windowss, std::vector<Players>& player
         if (show3CardSelectionMessage) {
             // Отображение сообщения и кнопок
            
-            if (event.type == sf::Event::KeyPressed) {
+            if (event.type == sf::Event::KeyPressed && showSaveLoadMenu == false) {
                 if (event.key.code == sf::Keyboard::Left || event.key.code == sf::Keyboard::Right) {
                     selected3ButtonIndex = 1 - selected3ButtonIndex; // Переключение между кнопками
                 } else if (event.key.code == sf::Keyboard::Enter) {
@@ -502,7 +507,7 @@ void handlePassingCards(sf::RenderWindow& windowss, std::vector<Players>& player
             }
 
         } else {
-            if (event.type == sf::Event::KeyPressed && showMessageEscape == false) {
+            if (event.type == sf::Event::KeyPressed && showMessageEscape == false && showSaveLoadMenu == false) {
                 if (event.key.code == sf::Keyboard::Left) {
                     if (selectedCardsIndex > 0) {
                         --selectedCardsIndex;
@@ -631,7 +636,7 @@ void handleHeratsBroken(sf::RenderWindow& windowss, std::vector<Players>& player
         current_player = (current_player + 1) % 4;
         
     } else {
-        if (event.type == sf::Event::KeyPressed && showMessageEscape ==false) {
+        if (event.type == sf::Event::KeyPressed && showMessageEscape ==false && showSaveLoadMenu == false) {
             if (event.key.code == sf::Keyboard::Left) {
                 do {
                     // Переход к предыдущей карте с круговым циклом
@@ -695,7 +700,7 @@ void handleNormalRound(sf::RenderWindow& windowss, std::vector<Players>& players
     if (current_player == 0) { 
         // Ход игрока 0
         
-        if (event.type == sf::Event::KeyPressed && !showMessageEscape) {
+        if (event.type == sf::Event::KeyPressed && !showMessageEscape && showSaveLoadMenu == false) {
             switch (event.key.code) {
                 case sf::Keyboard::Left:{
                     // Переход к предыдущей карте с круговым циклом
@@ -778,7 +783,7 @@ void handleNormalRound(sf::RenderWindow& windowss, std::vector<Players>& players
     
 void handleEndGame(sf::RenderWindow& windowss, std::vector<Players>& players, sf::Event event)
 {
-    if ((penalty_points_0 >= 100) || (penalty_points_1 >= 100) || (penalty_points_2 >= 100) || (penalty_points_3 >= 100))
+    if ((penalty_points[0] >= 100) || (penalty_points[1] >= 100) || (penalty_points[2] >= 100) || (penalty_points[3] >= 100))
     {
         windowss.clear();
         sf::Font font_1; //это шрифт
@@ -829,7 +834,7 @@ void handleEndGame(sf::RenderWindow& windowss, std::vector<Players>& players, sf
         windowss.draw(buttonNo);
 
 
-        if (penalty_points_0 >= 100)
+        if (penalty_points[0] >= 100)
         {
             // Создаем спрайт и устанавливаем текстуру
             sf::Sprite LoseSprite;
@@ -866,6 +871,111 @@ void handleEndGame(sf::RenderWindow& windowss, std::vector<Players>& players, sf
     }
 }
 
+void savegame(const std::vector<Players>& players, Cards bito[4], int current_player, int start_player, int penalty_points[4]) {
+    std::ofstream saveFile("resources/saveHeartsgame.txt");
+    if (!saveFile.is_open()) {
+        std::cerr << "Error opening file for saving!" << std::endl;
+        return;
+    }
+
+    // Сохраняем карты каждого игрока
+    for (const auto& player : players) {
+        for (const auto& card : player.hand) {
+            saveFile << card.rank << " " << card.suit << " ";
+        }
+        saveFile << "\n";
+    }
+
+    // Сохраняем карты массива bito
+    for (int i = 0; i < 4; ++i) {
+        saveFile << bito[i].suit << " " << bito[i].rank << " ";
+    }
+    saveFile << "\n";
+
+    // Сохраняем текущего игрока и стартового игрока
+    saveFile << current_player << "\n";
+    saveFile << start_player << "\n";
+
+    // Сохраняем очки штрафа
+    for (int i = 0; i < 4; ++i) {
+        saveFile << penalty_points[i] << "\n";
+    }
+
+    saveFile.close();
+}
+
+void loadgame(std::vector<Players>& players, Cards bito[4], int& current_player, int& start_player, int penalty_points[4]) {
+    std::ifstream loadFile("resources/saveHeartsgame.txt");
+    if (!loadFile.is_open()) {
+        std::cerr << "Error opening file for loading!" << std::endl;
+        return;
+    }
+    std::vector<std::string> suits = {"HEARTS", "DIAMONDS", "SPADES", "CLUBS"};
+    players.clear(); // Очищаем текущий список игроков перед загрузкой
+    players.resize(4); // Убеждаемся, что у нас 4 игрока
+
+    std::string line;
+    sf::Texture CardsTexture;
+    // Загружаем карты каждого игрока
+    for (auto& player : players) {
+        player.hand.clear();
+        if (std::getline(loadFile, line)) {
+            std::istringstream iss(line);
+            int rank;
+            std::string suit;
+            while (iss >> rank >> suit) {
+                Cards card;
+                card.rank = rank;
+                card.suit = suit;
+                // Загрузка текстуры и установка спрайта
+                
+                std::string filename = "resources/" + std::to_string(rank) + suit + ".png";
+                if (!CardsTexture.loadFromFile(filename)) {
+                    std::cerr << "Ошибка загрузки текстуры: " << filename << std::endl;
+                } else {
+                    card.texture = CardsTexture;
+                    card.sprite.setTexture(card.texture);
+                }
+                player.hand.push_back(card);
+            }
+        }
+    }
+
+    // Загружаем карты массива bito
+    if (std::getline(loadFile, line)) {
+        std::istringstream iss(line);
+        int rank;
+        std::string suit;
+        for (int i = 0; i < 4; ++i) {
+            iss >> suit >> rank;
+            bito[i].suit = suit;
+            bito[i].rank = rank;
+            if (suit != "0")
+            {
+                std::string filename = "resources/" + std::to_string(rank) + suit + ".png";
+                if (!CardsTexture.loadFromFile(filename)) {
+                    std::cerr << "Ошибка загрузки текстуры: " << filename << std::endl;
+                } else  {
+                    bito[i].texture = CardsTexture;
+                    bito[i].sprite.setTexture(bito[i].texture);
+                }
+            }
+        }
+    }
+
+    // Загружаем текущего игрока
+    loadFile >> current_player;
+
+    // Загружаем стартового игрока
+    loadFile >> start_player;
+
+    // Загружаем очки штрафа
+    for (int i = 0; i < 4; ++i) {
+        loadFile >> penalty_points[i];
+    }
+
+    loadFile.close();
+}
 
 int main_hearts(sf::RenderWindow& windowss) {
 
@@ -875,15 +985,25 @@ int main_hearts(sf::RenderWindow& windowss) {
     if (!LoseTexture.loadFromFile("resources/YouLose.png")) {
         std::cerr << "Ошибка загрузки шрифта YouLose.png!" << std::endl; // Ошибка загрузки текстуры
     }    
-    srand(time(0));
-
-    //  RenderWindow windowss(VideoMode(1920, 1080), L"Червы");
-  //RenderWindow windowss(VideoMode::getDesktopMode(),  L"Червы", Style::Fullscreen);
+    // srand(time(0));
 
     sf::Font font_1; //это шрифт
     if (!font_1.loadFromFile("resources/ffont.ttf")) {
         std::cerr << "Ошибка загрузки шрифта!" << std::endl;
     }
+
+    // сделаем сохранения
+    // Текст для элементов меню
+    sf::Text saveText("Save Game", font_1, 24);
+    saveText.setFillColor(sf::Color::White);
+    saveText.setPosition(800.f, 500.f);
+
+    sf::Text loadText("Load Game", font_1, 24);
+    loadText.setFillColor(sf::Color::White);
+    loadText.setPosition(1020.f, 500.f);
+
+
+
 
     sf::Text message_3_cards; // сделаем надпись для передачи 3 карт игроком 0
     message_3_cards.setFont(font_1);
@@ -892,7 +1012,6 @@ int main_hearts(sf::RenderWindow& windowss) {
     message_3_cards.setPosition(700.f,500.f);
 
     // Текст вопроса
-    // message_escape.setString(L"Вы действительно хотите выйти?");
     message_3_cards.setString(L"Do you want to pass theese 3 cards?");
 
 
@@ -935,11 +1054,9 @@ int main_hearts(sf::RenderWindow& windowss) {
     // Флаг для отображения текста выхода в меню
     bool returnToMenu = false;
 
-
     std::vector<Players> players(4);
 
     shuffle(players);
-
 
     Event event;
     Event main_game;
@@ -956,6 +1073,82 @@ int main_hearts(sf::RenderWindow& windowss) {
                 showMessageEscape = true;
                 selectedButtonIndex = 0;
             }
+
+                // Обработка нажатия на кнопку "Save Game"
+            if (event.type == Event::KeyPressed && event.key.code == Keyboard::S) {
+                showSaveLoadMenu = true;
+                saveText.setFillColor(sf::Color::Red);
+                loadText.setFillColor(sf::Color::White);
+                selectedSaveButtonIndex = 0; // Выбираем "Save Game" по умолчанию
+            }
+            // Обработка нажатия на кнопку "Load Game"
+            if (event.type == Event::KeyPressed && event.key.code == Keyboard::L) {
+                showSaveLoadMenu = true;
+                loadText.setFillColor(sf::Color::Red);
+                saveText.setFillColor(sf::Color::White);
+                selectedSaveButtonIndex = 1; // Выбираем "Load Game" по умолчанию
+            }
+
+            // Обработка событий для меню сохранения/загрузки
+            if (showSaveLoadMenu) {
+                if (selectedSaveButtonIndex == 0)
+                {
+                    if (event.key.code == Keyboard::Left) {
+                            // selectedsaveyesnobuttonindex = (selectedsaveyesnobuttonindex - 1 + 2) % 2;
+                            selectedsaveyesnobuttonindex = 0;
+                            
+                        } else if (event.key.code == Keyboard::Right) {
+                            // selectedsaveyesnobuttonindex = (selectedsaveyesnobuttonindex + 1) % 2;
+                            selectedsaveyesnobuttonindex = 1;
+                            
+                        } else if (event.key.code == Keyboard::Enter) {
+                            
+                            if (selectedsaveyesnobuttonindex == 0) {
+                                savegame(players, bito, current_player, start_player, penalty_points);
+                                showSaveLoadMenu = false;
+                                break;
+                            } else {
+                                // Скрываем текстовое сообщение
+                                showSaveLoadMenu = false;
+                                // Сбрасываем цвет кнопок
+                                buttonYes.setFillColor(Color::White);
+                                buttonNo.setFillColor(Color::White);
+                            }
+                        }
+                    buttonYes.setFillColor(selectedsaveyesnobuttonindex == 0 ? sf::Color::Red : sf::Color::White);
+                    buttonNo.setFillColor(selectedsaveyesnobuttonindex == 1 ? sf::Color::Red : sf::Color::White);
+                }
+                else if (selectedSaveButtonIndex == 1)
+                {
+                    
+                    if (event.key.code == Keyboard::Left) {
+                            selectedsaveyesnobuttonindex = 0;
+                            
+                        } else if (event.key.code == Keyboard::Right) {
+                            selectedsaveyesnobuttonindex = 1;
+                            
+                        } else if (event.key.code == Keyboard::Enter) {
+                            if (selectedsaveyesnobuttonindex == 0) {
+                                loadgame(players, bito,current_player, start_player, penalty_points);
+                                currentGameState = NORMAL_ROUND;
+                                showSaveLoadMenu = false;
+                                break;
+                            } else {
+                                // Скрываем текстовое сообщение
+                                showSaveLoadMenu = false;
+                                // Сбрасываем цвет кнопок
+                                buttonYes.setFillColor(Color::White);
+                                buttonNo.setFillColor(Color::White);
+                            }
+                        }
+                    buttonYes.setFillColor(selectedsaveyesnobuttonindex == 0 ? sf::Color::Red : sf::Color::White);
+                    buttonNo.setFillColor(selectedsaveyesnobuttonindex == 1 ? sf::Color::Red : sf::Color::White);
+                }
+                // ... (Код аналогичен обработке событий для меню выхода)
+                // В зависимости от выбранной кнопки вызывайте saveGame() или loadGame()
+
+            }
+
 
             // Обработка событий для текстового сообщения
            if (showMessageEscape) {
@@ -1058,10 +1251,10 @@ int main_hearts(sf::RenderWindow& windowss) {
                         for (Cards& card : players[0].hand) {
                             card.sprite.setColor(sf::Color::White); // тут выбранные карты красим обратно в белый
                                 shuffle(players);
-                                penalty_points_0 = 0;
-                                penalty_points_1 = 0;
-                                penalty_points_2 = 0;
-                                penalty_points_3 = 0;
+                                penalty_points[0] = 0;
+                                penalty_points[1] = 0;
+                                penalty_points[2] = 0;
+                                penalty_points[3] = 0;
                                 currentGameState = PASSING_CARDS;
                         }
                     }
@@ -1090,6 +1283,19 @@ int main_hearts(sf::RenderWindow& windowss) {
                 windowss.draw(buttonYes);
                 windowss.draw(buttonNo);
             }
+
+
+        // Отрисовка меню сохранения/загрузки
+        if (showSaveLoadMenu) {
+            // RectangleShape dark_background_sprite(Vector2f(2000, 2000));
+            // dark_background_sprite.setFillColor(Color(0, 0, 0, 100));
+            // windowss.draw(dark_background_sprite);
+            windowss.draw(saveText);
+            windowss.draw(loadText);
+            windowss.draw(buttonYes);
+            windowss.draw(buttonNo);
+        }
+
 
             windowss.display();
         }

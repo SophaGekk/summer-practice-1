@@ -24,32 +24,6 @@ void Init_Text_D(Text& mtext, float xpos, float ypos, String str, int size_font,
 
 }
 
-// int Game_Start_Durak(sf::RenderWindow& Play)
-// {
-//     RectangleShape background_play(Vector2f(1920, 1080));
-//     Play.setMouseCursorVisible(true); //включаем видимость курсора
-//     Texture texture_play;
-//     if (!texture_play.loadFromFile("resources/table.png")) exit(1);
-//     background_play.setTexture(&texture_play);
-
-//     while (Play.isOpen())
-//     {
-//         Event event_play;
-//         while (Play.pollEvent(event_play))
-//         {
-//             if (event_play.type == Event::KeyPressed)
-//             {
-//                 main_durak(Play);
-//                 if (event_play.key.code == Keyboard::Escape) { return 0; }
-//             }
-//         }
-//         Play.clear();
-//         Play.draw(background_play);
-//         Play.display();
-//     }
-//     return 0;
-// }
-
 //Настройки
 int Options_Durak(sf::RenderWindow& Optionis)
 {
@@ -83,7 +57,7 @@ int About_Game_Durak(sf::RenderWindow& About)
 
     RectangleShape background_ab(Vector2f(VideoMode::getDesktopMode().width, VideoMode::getDesktopMode().height));
     Texture texture_ab;
-    if (!texture_ab.loadFromFile("resources/rules_pik_dam.png")) exit(3);
+    if (!texture_ab.loadFromFile("resources/rules_durak.png")) exit(3);
     background_ab.setTexture(&texture_ab);
 
     // Шрифт для названия экрана
@@ -130,18 +104,6 @@ int Menu_Durak(sf::RenderWindow& window)
     Sound sound, sound_return;
     sound.setBuffer(buffer);
     sound_return.setBuffer(buf_return);
-
-    // Music music;
-    // if (!music.openFromFile("C:/Users/Sopha/Desktop/proj/audio/horror.ogg")) return 25;
-    // music.setLoop(true);
-    // music.setVolume(50);
-    // music.play();
-
-    // Music musicF;
-    // if (!musicF.openFromFile("C:/Users/Sopha/Desktop/proj/audio/faer.ogg")) return 28;
-    // musicF.setLoop(true);
-    // musicF.setVolume(50);
-    // musicF.play();
 
     //Название пунктов меню
     std::vector<String> name_menu{L"Играть",L"Настройки",L"Правила игры",L"Вернуться в меню"};

@@ -89,3 +89,6 @@ void handleFirstRound(sf::RenderWindow& windowss, std::vector<Players>& players,
 void handleHeratsBroken(sf::RenderWindow& windowss, std::vector<Players>& players, Event event);
 void handleNormalRound(sf::RenderWindow& windowss, std::vector<Players>& players, Event event);
 void check_bito(std::vector<Players>& players, Cards bito[4]);
+
+void loadgame(std::vector<Players>& players, Cards bito[4], int& current_player, int& start_player, int penalty_points[4]);
+void savegame(const std::vector<Players>& players, Cards bito[4], int current_player, int start_player, int penalty_points[4]);

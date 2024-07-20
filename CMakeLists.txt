@@ -7,7 +7,7 @@ FetchContent_Declare(SFML
     GIT_TAG 2.6.x)
 FetchContent_MakeAvailable(SFML)
 
-add_executable(GameMenu main.cpp GameMenu.cpp GameMenu.h AssetManager.cpp AssetManager.h Animator.cpp Animator.h menupik.h menupik.cpp pikdam.h pikdam.cpp menudurak.h menudurak.cpp durak.h durak.cpp menuhearts.h menuhearts.cpp Hearts.cpp Hearts.h menusolitaire.cpp menusolitaire.h solitar.cpp solitar.h) 
+add_executable(GameMenu main.cpp GameMenu.cpp GameMenu.h AssetManager.cpp AssetManager.h Animator.cpp Animator.h menupik.h menupik.cpp pikdam.h pikdam.cpp menudurak.h menudurak.cpp durak.h durak.cpp menuhearts.h menuhearts.cpp Hearts.cpp Hearts.h menusolitaire.cpp menusolitaire.h solitar.cpp solitar.h drawpik.cpp drawdurak.cpp)
 
 # если ошибка зугрзуки ресурсов window.png и аудио раскоменть это 
 add_custom_command(TARGET GameMenu POST_BUILD

@@ -3,7 +3,6 @@
 #include <SFML/Graphics.hpp> 
 #include <SFML/Audio.hpp> 
 #include "Animator.h"
-// #include "solitaire.h"
 
 #include "solitar.h"
 
@@ -19,42 +18,12 @@ void Init_Textix(Text& mtext, float xpos, float ypos, String str, int size_font=
 
 }
 
-//Настройки
-int Option(sf::RenderWindow& Optionis)
-{
-    // RenderWindow Optionis(VideoMode::getDesktopMode(), L"Настройки", Style::Fullscreen);
-
-    RectangleShape background_opt(Vector2f(1920, 1080));
-    Texture texture_opt;
-    if (!texture_opt.loadFromFile("resources/table.png")) exit(2);
-
-    background_opt.setTexture(&texture_opt);
-    while (Optionis.isOpen())
-    {
-        Event event_opt;
-        while (Optionis.pollEvent(event_opt))
-        {
-            if (event_opt.type == Event::Closed) return 0;
-            if (event_opt.type == Event::KeyPressed)
-            {
-                if (event_opt.key.code == Keyboard::Escape) return 0;
-            }
-        }
-        Optionis.clear();
-        Optionis.draw(background_opt);
-        Optionis.display();
-    }
-    return 0;
-}
-
 // Об Игре
 int About_Game_solitaire(sf::RenderWindow& About)
 {
-    // RenderWindow About(VideoMode::getDesktopMode(), L"Правила игры", Style::Fullscreen);
-
     RectangleShape background_ab(Vector2f(VideoMode::getDesktopMode().width, VideoMode::getDesktopMode().height));
     Texture texture_ab;
-    if (!texture_ab.loadFromFile("resources/rules_pik_dam.png")) exit(3);
+    if (!texture_ab.loadFromFile("resources/rules_solit.png")) exit(3);
     background_ab.setTexture(&texture_ab);
 
     // Шрифт для названия экрана
@@ -87,29 +56,11 @@ int About_Game_solitaire(sf::RenderWindow& About)
 int Menu_solitaire(sf::RenderWindow& window) 
 {
     setlocale(LC_ALL, "Russian");
-    // // Инициализация окна SFML
-    // sf::RenderWindow window(sf::VideoMode::getDesktopMode(),  L"Пиковая Дама", Style::Fullscreen);
-    
-    // // Делаем окно windows прозрачным
-    // SetWindowLong(window.getSystemHandle(), GWL_EXSTYLE, GetWindowLong(window.getSystemHandle(), GWL_EXSTYLE) | WS_EX_LAYERED);
-    // SetLayeredWindowAttributes(window.getSystemHandle(), 0, 0, LWA_COLORKEY);
-
     window.setMouseCursorVisible(false); //отключаем видимость курсора
 
     // Размер экрана
     float widht = sf::VideoMode::getDesktopMode().width;
     float height = sf::VideoMode::getDesktopMode().height;
-
-    //Заставка загрузки
-
-    // Texture texthome;
-    // texthome.loadFromFile("C:/Users/Sopha/Desktop/proj/pik_dam.png");
-    // RectangleShape homecls(Vector2f(640, 280));
-    // homecls.setTexture(&texthome);
-    // homecls.setPosition(Vector2f(widht / 2 - homecls.getLocalBounds().width/2, height / 2- homecls.getLocalBounds().height/2));
-    // window.draw(homecls);
-    // window.display();
-
     // Звуковые эффекты
     SoundBuffer buffer;
     SoundBuffer buf_return;
@@ -120,23 +71,11 @@ int Menu_solitaire(sf::RenderWindow& window)
     sound.setBuffer(buffer);
     sound_return.setBuffer(buf_return);
 
-    // Music music;
-    // if (!music.openFromFile("C:/Users/Sopha/Desktop/proj/audio/horror.ogg")) return 25;
-    // music.setLoop(true);
-    // music.setVolume(50);
-    // music.play();
-
-    // Music musicF;
-    // if (!musicF.openFromFile("C:/Users/Sopha/Desktop/proj/audio/faer.ogg")) return 28;
-    // musicF.setLoop(true);
-    // musicF.setVolume(50);
-    // musicF.play();
-
     //Название пунктов меню
-    std::vector<String> name_menu{L"Играть",L"Настройки",L"Правила игры",L"Вернуться в меню"};
+    std::vector<String> name_menu{L"Играть",L"Правила игры",L"Вернуться в меню"};
 
     //Объект меню
-    game::GameMenu mymenu(window, 950, 350, 100, 120, name_menu);
+    game::GameMenu mymenu(window, 950, 370, 100, 170, name_menu);
     // Установка цвета отображения меню
     mymenu.setColorTextMenu(Color(237, 147, 0), Color::Red, Color::Black);
     mymenu.AlignMenu(2);
@@ -202,16 +141,13 @@ int Menu_solitaire(sf::RenderWindow& window)
                         gameJustEnded = false; // Сброс флага для следующего запуска игры
                         // Обработка других пунктов меню
                     }
-                    // music.pause(); musicF.pause();
                     sound_return.play();
                         // Переходим на выбранный пункт меню
                         switch (mymenu.getSelectedMenuNumber())
                         {
-                            case 1:Option(window);     break;
-                            case 2:About_Game_solitaire(window);  break;
-                            case 3:return 0; break;
+                            case 1: About_Game_solitaire(window);  break;
+                            case 2:return 0; break;
                         }
-                    // music.play(); musicF.play();
                 }
             }
         }
