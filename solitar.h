@@ -1,25 +1,41 @@
-#pragma once
-
-#include <stdio.h>
-#include <SFML/Graphics.hpp>
-#include <SFML/System.hpp>
-#include <iostream>
+#include <SFML/Graphics.hpp> //http://www.sfml-dev.org/tutorials/2.4
 #include <vector>
-#include <ctime>
-#include <algorithm>
-#include <set>
-#include <random>
+#include <iostream> //For output to the terminal
+#include <sstream> //For input through arguments
 
-class Card {
-public:
-    int value; // 6-14 (6 to Ace)
-    std::string suit; //  (Spades, Clubs, Diamonds, Hearts)
-    sf::Texture texture; 
-    sf::Sprite sprite; 
+#define game_W        1920
+#define game_H        1080
+#define tex_card_W    153
+#define tex_card_H    200
+#define card_W        77
+#define card_H        110
+#define tex_cursor_W  32
+#define tex_cursor_H  32
+#define cursor_W      32
+#define cursor_H      32
+#define margin        21  //Margin used in layout
+#define card_peek     5   //Fraction of the card to show peeking from under overlapped cards
+#define font_size     48
+#define stack_draw    4   //How many potentially unseen stack cards should be drawn
+
+struct Card {
+    uint8_t num;
+    bool facedown = true;
+    float rotation;
+};
+class Deck {
+  public:
+    sf::Vector2f pos;
+    bool is_stack;
+    bool allow_drop;
+    std::vector<Card> cards;
+    uint8_t type;
+    
+    Deck (sf::Vector2f, bool, bool, uint8_t);
 };
 class Button {
 public:
-    Button(const std::string& text, const sf::Vector2f& size, const int charSize, const sf::Color& bgColor, const sf::Color& textColor, sf::Font font_1) {
+    Button(const std::wstring& text, const sf::Vector2f& size, const int charSize, const sf::Color& bgColor, const sf::Color& textColor, sf::Font& font_1) {
         // Установка формы кнопки
         buttonShape.setSize(size);
         buttonShape.setFillColor(bgColor);
@@ -65,4 +81,4 @@ private:
     sf::RectangleShape buttonShape;
     sf::Text buttonText;
 };
-int main_solitare(sf::RenderWindow& windowss);
+int main_solitare (sf::RenderWindow& window); //, int argc, char* argv[]);

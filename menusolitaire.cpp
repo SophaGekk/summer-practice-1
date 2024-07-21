@@ -3,7 +3,6 @@
 #include <SFML/Graphics.hpp> 
 #include <SFML/Audio.hpp> 
 #include "Animator.h"
-// #include "solitaire.h"
 
 #include "solitar.h"
 
@@ -22,8 +21,6 @@ void Init_Textix(Text& mtext, float xpos, float ypos, String str, int size_font=
 //Настройки
 int Option(sf::RenderWindow& Optionis)
 {
-    // RenderWindow Optionis(VideoMode::getDesktopMode(), L"Настройки", Style::Fullscreen);
-
     RectangleShape background_opt(Vector2f(1920, 1080));
     Texture texture_opt;
     if (!texture_opt.loadFromFile("resources/table.png")) exit(2);
@@ -50,11 +47,9 @@ int Option(sf::RenderWindow& Optionis)
 // Об Игре
 int About_Game_solitaire(sf::RenderWindow& About)
 {
-    // RenderWindow About(VideoMode::getDesktopMode(), L"Правила игры", Style::Fullscreen);
-
     RectangleShape background_ab(Vector2f(VideoMode::getDesktopMode().width, VideoMode::getDesktopMode().height));
     Texture texture_ab;
-    if (!texture_ab.loadFromFile("resources/rules_pik_dam.png")) exit(3);
+    if (!texture_ab.loadFromFile("resources/rules_solit.png")) exit(3);
     background_ab.setTexture(&texture_ab);
 
     // Шрифт для названия экрана
@@ -87,29 +82,11 @@ int About_Game_solitaire(sf::RenderWindow& About)
 int Menu_solitaire(sf::RenderWindow& window) 
 {
     setlocale(LC_ALL, "Russian");
-    // // Инициализация окна SFML
-    // sf::RenderWindow window(sf::VideoMode::getDesktopMode(),  L"Пиковая Дама", Style::Fullscreen);
-    
-    // // Делаем окно windows прозрачным
-    // SetWindowLong(window.getSystemHandle(), GWL_EXSTYLE, GetWindowLong(window.getSystemHandle(), GWL_EXSTYLE) | WS_EX_LAYERED);
-    // SetLayeredWindowAttributes(window.getSystemHandle(), 0, 0, LWA_COLORKEY);
-
     window.setMouseCursorVisible(false); //отключаем видимость курсора
 
     // Размер экрана
     float widht = sf::VideoMode::getDesktopMode().width;
     float height = sf::VideoMode::getDesktopMode().height;
-
-    //Заставка загрузки
-
-    // Texture texthome;
-    // texthome.loadFromFile("C:/Users/Sopha/Desktop/proj/pik_dam.png");
-    // RectangleShape homecls(Vector2f(640, 280));
-    // homecls.setTexture(&texthome);
-    // homecls.setPosition(Vector2f(widht / 2 - homecls.getLocalBounds().width/2, height / 2- homecls.getLocalBounds().height/2));
-    // window.draw(homecls);
-    // window.display();
-
     // Звуковые эффекты
     SoundBuffer buffer;
     SoundBuffer buf_return;
@@ -119,18 +96,6 @@ int Menu_solitaire(sf::RenderWindow& window)
     Sound sound, sound_return;
     sound.setBuffer(buffer);
     sound_return.setBuffer(buf_return);
-
-    // Music music;
-    // if (!music.openFromFile("C:/Users/Sopha/Desktop/proj/audio/horror.ogg")) return 25;
-    // music.setLoop(true);
-    // music.setVolume(50);
-    // music.play();
-
-    // Music musicF;
-    // if (!musicF.openFromFile("C:/Users/Sopha/Desktop/proj/audio/faer.ogg")) return 28;
-    // musicF.setLoop(true);
-    // musicF.setVolume(50);
-    // musicF.play();
 
     //Название пунктов меню
     std::vector<String> name_menu{L"Играть",L"Настройки",L"Правила игры",L"Вернуться в меню"};
