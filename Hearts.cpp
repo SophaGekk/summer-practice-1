@@ -590,7 +590,7 @@ void handlePassingCards(sf::RenderWindow& windowss, std::vector<Players>& player
 
     if (!buffer.loadFromFile("resources/audiomenu2.wav")) std::cout << "couldnt open audiomenu2.wav" << std::endl;
     if (!buf_return.loadFromFile("resources/audiomenu5.wav")) std::cout << "couldnt open audiomenu5.wav" << std::endl;
-    if (!bruh_buffer.loadFromFile("resources/movie_1.mp3")) std::cout << "couldnt open resources/movie_1.mp3" << std::endl;
+    if (!bruh_buffer.loadFromFile("resources/movie_1.wav")) std::cout << "couldnt open resources/movie_1.mp3" << std::endl;
 
     Sound sound, sound_return, bruh_sound;
     sound.setBuffer(buffer);
