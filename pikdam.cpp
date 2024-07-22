@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <SFML/Graphics.hpp>
 #include <SFML/System.hpp>
+#include <SFML/Audio.hpp> 
 #include <iostream>
 #include <vector>
 #include <ctime>
@@ -9,10 +10,12 @@
 #include <random>
 #include <fstream> // For file operations
 #include <sstream> // For string manipulation
-using namespace sf;
 #include "pikdam.h"
 #include <memory>
-
+/// @brief функция для сравнения двух карт и исключения дамы пики
+/// @param Cardi1 первая карта
+/// @param Cardi2 вторая карта
+/// @return true or false
 bool pair_of_Cardis(const Cardi& Cardi1, const Cardi& Cardi2) {
     if((Cardi1.suit == "SPADES" && Cardi1.value == 12) || (Cardi2.suit == "SPADES" && Cardi2.value == 12))
     {
@@ -21,7 +24,9 @@ bool pair_of_Cardis(const Cardi& Cardi1, const Cardi& Cardi2) {
     }
     return Cardi1.value == Cardi2.value;
 }
-// Функция для поиска текущего игрока, чей ход необходимо выполнить
+/// @brief Функция для поиска текущего игрока, чей ход необходимо выполнить
+/// @param players вектор игроков
+/// @return индекс текущего атакующего игрока
 int findCurrentPlayer(const  std::vector<std::unique_ptr<Player_>>& players) {
     for (int i = 0; i < players.size(); ++i) {
         if (!players[i]->hand.empty() && !players[i]->hasWon) {
@@ -33,6 +38,10 @@ int findCurrentPlayer(const  std::vector<std::unique_ptr<Player_>>& players) {
     }
     return -1; // Все игроки выиграли
 }
+/// @brief Функция для поиска текущего игрока, чей ход необходимо выполнить
+/// @param players вектор игроков
+/// @param currentIndex индекс текущего атакующего игрока
+/// @return индекс соседа атакующего игрока
 int findNextPlayerWithCardis(const std::vector<std::unique_ptr<Player_>>& players, int currentIndex) {
     int nextIndex = (currentIndex + 1) % players.size();
     while (players[nextIndex]->hand.empty() && nextIndex != currentIndex) {
@@ -41,6 +50,11 @@ int findNextPlayerWithCardis(const std::vector<std::unique_ptr<Player_>>& player
     }
     return nextIndex;
 }
+/// @brief Функция для поиска текущего игрока человека, чей ход необходимо выполнить
+/// @param players вектор игроков
+/// @param currentIndex индекс текущего атакующего игрока
+/// @param number_of_players_people количество игроков - людей
+/// @return индекс соседа атакующего игрока
 int who_move_transition(const std::vector<std::unique_ptr<Player_>>& players, int& currentIndex, int& number_of_players_people){
     int nextIndex = (currentIndex + 1) % number_of_players_people;
     while (players[nextIndex]->hand.empty() && nextIndex != currentIndex) {
@@ -50,7 +64,16 @@ int who_move_transition(const std::vector<std::unique_ptr<Player_>>& players, in
     return nextIndex;
 }
 
-
+/// @brief Функция сохарнения игры
+/// @param players вектор игроков
+/// @param number_of_players_people количество игроков - людей
+/// @param currentIndex индекс текущего атакующего игрока
+/// @param playersChoseNo количество игрков скинувших карты(выбравших нет)
+/// @param move_transition переход хода
+/// @param crdpair Флаг, для скидывания карт
+/// @param CardiTaken Флаг, указывающий на то, что карта была взята
+/// @param canTakeCardi Можно ли брать карту у противника
+/// @param showCardiSelectionMessage сообщение о выборе карт
 void savegame(const std::vector<std::unique_ptr<Player_>>& players, int& number_of_players_people, int& currentIndex, int& playersChoseNo, bool& move_transition, bool& crdpair, bool& CardiTaken, bool& canTakeCardi, bool& showCardiSelectionMessage) {
     std::ofstream saveFile("resources/pikgame_save.txt");
     if (!saveFile.is_open()) {
@@ -85,7 +108,16 @@ void savegame(const std::vector<std::unique_ptr<Player_>>& players, int& number_
 
     saveFile.close();
 }
-
+/// @brief Функция загрузки сохранения игры
+/// @param players вектор игроков
+/// @param number_of_players_people количество игроков - людей
+/// @param currentIndex индекс текущего атакующего игрока
+/// @param playersChoseNo количество игрков скинувших карты(выбравших нет)
+/// @param move_transition переход хода
+/// @param crdpair Флаг, для скидывания карт
+/// @param CardiTaken Флаг, указывающий на то, что карта была взята
+/// @param canTakeCardi Можно ли брать карту у противника
+/// @param showCardiSelectionMessage сообщение о выборе карт
 void loadgame(const std::vector<std::unique_ptr<Player_>>& players, int& number_of_players_people, int& currentIndex, int& playersChoseNo, bool& move_transition, bool& crdpair, bool& CardiTaken, bool& canTakeCardi, bool& showCardiSelectionMessage) {
     std::ifstream loadFile("resources/pikgame_save.txt");
     if (!loadFile.is_open()) {
@@ -146,6 +178,9 @@ void loadgame(const std::vector<std::unique_ptr<Player_>>& players, int& number_
 
     loadFile.close();
 }
+/// @brief Основная функция игры - здесь храниться логика
+/// @param windowss игровое окно
+/// @param number_of_players_people количество игроков - людей
 int main_pikgame(sf::RenderWindow& windowss, int& number_of_players_people) {
     int currentPlayerIndex = 0;
     int number_of_players = 4;
@@ -227,7 +262,17 @@ int main_pikgame(sf::RenderWindow& windowss, int& number_of_players_people) {
     
     int selectedCardiIndex = 0;
     int selectedCardiIndexRight = 0;
+    
+    // Звуковые эффекты
+    SoundBuffer buffer;
+    SoundBuffer buf_return;
 
+    if (!buffer.loadFromFile("resources/audiomenu2.wav")) return 22;
+    if (!buf_return.loadFromFile("resources/audiomenu5.wav")) return 22;
+    Sound sound, sound_return;
+    sound.setBuffer(buffer);
+    sound_return.setBuffer(buf_return);
+    
     std::vector<int> selected_Cardi(0);
     sf::Font font_1;
     if (!font_1.loadFromFile("resources/arial.ttf"))
@@ -385,6 +430,7 @@ int main_pikgame(sf::RenderWindow& windowss, int& number_of_players_people) {
             {
                 showMessageEscape = true;
                 showCardiSelectionMessage = false;
+                sound_return.play();
             }
 
             // Обработка нажатия на кнопку "Save Game"
@@ -399,6 +445,7 @@ int main_pikgame(sf::RenderWindow& windowss, int& number_of_players_people) {
                     showCardiSelectionMessage = false;
                     showMessage = true;
                 }
+                sound_return.play();
             }
             // Обработка нажатия на кнопку "Load Game"
             if (event.type == Event::KeyPressed && event.key.code == Keyboard::L) {
@@ -412,6 +459,7 @@ int main_pikgame(sf::RenderWindow& windowss, int& number_of_players_people) {
                     showCardiSelectionMessage = false;
                     showMessage = true;
                 }
+                sound_return.play();
             }
 
             // Обработка событий для меню сохранения/загрузки
@@ -504,6 +552,7 @@ int main_pikgame(sf::RenderWindow& windowss, int& number_of_players_people) {
                         main_pikgame(windowss, number_of_players_people);  return 0; break;
                     }
                 }
+                sound_return.play();
             }
             if(playersChoseNo != number_of_players)
             {
@@ -513,11 +562,13 @@ int main_pikgame(sf::RenderWindow& windowss, int& number_of_players_people) {
                     {
                         // Переключение на предыдущую кнопку
                         selectedButtonIndex = (selectedButtonIndex - 1 + 2) % 2;
+                        sound.play();
                     }
                     else if (event.key.code == sf::Keyboard::Right)
                     {
                         // Переключение на следующую кнопку
                         selectedButtonIndex = (selectedButtonIndex + 1) % 2;
+                        sound.play();
                     }
                     else if (event.key.code == sf::Keyboard::Enter)
                     {
@@ -565,6 +616,7 @@ int main_pikgame(sf::RenderWindow& windowss, int& number_of_players_people) {
                             {
                                 selectedCardiIndex = Player[currentPlayerIndex]->hand.size() - 1;
                             }
+                            sound.play();
                         }
                         else if (event.key.code == sf::Keyboard::Right)
                         {
@@ -577,6 +629,7 @@ int main_pikgame(sf::RenderWindow& windowss, int& number_of_players_people) {
                             {
                                 selectedCardiIndex = 0;
                             }
+                            sound.play();
                         }
                         else if (event.key.code == sf::Keyboard::Enter)
                         {
@@ -712,11 +765,13 @@ int main_pikgame(sf::RenderWindow& windowss, int& number_of_players_people) {
                         {
                             // Переключение на предыдущую кнопку
                             selectedButtonIndex = (selectedButtonIndex - 1 + 2) % 2;
+                            sound.play();
                         }
                         else if (event.key.code == sf::Keyboard::Right)
                         {
                             // Переключение на следующую кнопку
                             selectedButtonIndex = (selectedButtonIndex + 1) % 2;
+                            sound.play();
                         }
                         else if (event.key.code == sf::Keyboard::Enter)
                         {
@@ -756,6 +811,7 @@ int main_pikgame(sf::RenderWindow& windowss, int& number_of_players_people) {
                     {
                         selectedCardiIndexRight  = Player[neighborIndex]->hand.size() - 1;
                     }
+                    sound.play();
                 }
                 else if(event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Right && (canTakeCardi && !CardiTaken))
                 {
@@ -768,6 +824,7 @@ int main_pikgame(sf::RenderWindow& windowss, int& number_of_players_people) {
                     {
                         selectedCardiIndexRight  = 0;
                     }
+                    sound.play();
                 }
                 else if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Enter && (canTakeCardi && !CardiTaken)) 
                 {
@@ -801,6 +858,7 @@ int main_pikgame(sf::RenderWindow& windowss, int& number_of_players_people) {
                     {
                         selectedCardiIndex = Player[currentPlayerIndex]->hand.size() - 1;
                     }
+                    sound.play();
                 }
                 else if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Right && crdpair)
                 {
@@ -813,6 +871,7 @@ int main_pikgame(sf::RenderWindow& windowss, int& number_of_players_people) {
                     {
                         selectedCardiIndex = 0;
                     }
+                    sound.play();
                 }
                 else if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Enter && crdpair)
                 {

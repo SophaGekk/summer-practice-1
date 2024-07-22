@@ -23,9 +23,21 @@ struct Card {
     bool facedown = true;
     float rotation;
 
-    // Оператор сравнения < для класса Card
+    /// @brief Перегрузка оператора сравнения < для класса Card
+    /// @param other карта для сравнения
+    /// @return true or false
     bool operator<(const Card& other) const {
         return num < other.num;
+    }
+
+    /// @brief Перегрузка оператора << для вывода информации о карте в поток.
+    /// @param out Поток вывода
+    /// @param card Карта, которую нужно вывести.
+    /// @return Поток вывода с добавленной информацией о карте в формате:
+    ///         "номер_карты facedown угол_поворота".
+    friend std::ostream& operator<<(std::ostream& out, const Card& card) {
+        out << card.num << " " << card.facedown << " " << card.rotation; 
+        return out;
     }
 };
 class Deck {

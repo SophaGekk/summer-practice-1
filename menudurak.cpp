@@ -23,31 +23,128 @@ void Init_Text_D(Text& mtext, float xpos, float ypos, String str, int size_font,
     mtext.setPosition(xpos, ypos);
 
 }
-
+int PlayerChose_P = 3;
 //Настройки
 int Options_Durak(sf::RenderWindow& Optionis)
 {
-    RectangleShape background_opt(Vector2f(1920, 1080));
-    Texture texture_opt;
+    sf::RectangleShape background_opt(sf::Vector2f(1920, 1080));
+    sf::Texture texture_opt;
     if (!texture_opt.loadFromFile("resources/table.png")) exit(2);
-
     background_opt.setTexture(&texture_opt);
+
+    std::vector<std::wstring> playerOptions = {L"1 игрок", L"2 игрока", L"3 игрока", L"4 игрока"};
+    std::vector<std::wstring> modeOptions = {L"Подкидной", L"Обычный"};
+    int currentOption = 0;
+    bool optionSelected = false;
+    int currentOptionmode = 0;
+    bool optionSelectedmode = false;
+
+    sf::Font font;
+    if (!font.loadFromFile("resources/arial.ttf")) exit(3);
+    sf::Text optionText;
+    optionText.setFont(font);
+    optionText.setCharacterSize(50);
+    optionText.setFillColor(sf::Color::White);
+    optionText.setPosition(860, 550);
+    optionText.setString(playerOptions[currentOption]);
+
+    sf::RectangleShape textBackground(sf::Vector2f(400, 100));
+    textBackground.setFillColor(sf::Color(0, 0, 0, 150)); // Полупрозрачный черный фон
+    textBackground.setPosition(750, 540);
+    sf::Text messege;
+    messege.setFont(font);
+    messege.setCharacterSize(60);
+    messege.setFillColor(sf::Color::White);
+    messege.setPosition(100.f, 100.f);
+    // Текст вопроса
+    messege.setString(L"Выберите количество игроков - людей: ");
+    messege.setPosition(450, 350);
+
+    sf::Text messege_enter;
+    messege_enter.setFont(font);
+    messege_enter.setCharacterSize(40);
+    messege_enter.setFillColor(sf::Color::White);
+    messege_enter.setPosition(100.f, 100.f);
+
+    // Текст вопроса
+    messege_enter.setString(L"Нажмите Enter чтобы подтвердить выбор и Escape чтобы выйти");
+    messege_enter.setPosition(380, 450);
+    
+    sf::Text modeText;
+    modeText.setFont(font);
+    modeText.setCharacterSize(50);
+    modeText.setFillColor(sf::Color::White);
+    modeText.setPosition(830, 700);
+    modeText.setString(modeOptions[currentOptionmode]);
+    
+    sf::RectangleShape textBackground_mode(sf::Vector2f(400, 100));
+    textBackground_mode.setFillColor(sf::Color(0, 0, 0, 150)); // Полупрозрачный черный фон
+    textBackground_mode.setPosition(750, 690);
+
     while (Optionis.isOpen())
     {
-        Event event_opt;
+        sf::Event event_opt;
         while (Optionis.pollEvent(event_opt))
         {
-            if (event_opt.type == Event::Closed) return 0;
-            if (event_opt.type == Event::KeyPressed)
+            if (event_opt.type == sf::Event::Closed) return 0;
+            if (event_opt.type == sf::Event::KeyPressed)
             {
-                if (event_opt.key.code == Keyboard::Escape) return 0;
+                if (event_opt.key.code == sf::Keyboard::Escape) return currentOption + 1;
+                if (!optionSelected)
+                {
+                    if (event_opt.key.code == sf::Keyboard::Right)
+                    {
+                        currentOption = (currentOption + 1) % playerOptions.size();
+                        optionText.setString(playerOptions[currentOption]);
+                    }
+                    if (event_opt.key.code == sf::Keyboard::Left)
+                    {
+                        currentOption = (currentOption - 1 + playerOptions.size()) % playerOptions.size();
+                        optionText.setString(playerOptions[currentOption]);
+                    }
+                    if (event_opt.key.code == sf::Keyboard::Enter)
+                    {
+                        optionSelected = true;
+                    }
+                }
+                else if (!optionSelectedmode)
+                {
+                    if (event_opt.key.code == sf::Keyboard::Right)
+                    {
+                        currentOptionmode = (currentOptionmode + 1) % modeOptions.size();
+                        modeText.setString(modeOptions[currentOptionmode]);
+                    }
+                    if (event_opt.key.code == sf::Keyboard::Left)
+                    {
+                        currentOptionmode = (currentOptionmode - 1 + modeOptions.size()) % modeOptions.size();
+                        modeText.setString(modeOptions[currentOptionmode]);
+                    }
+                    if (event_opt.key.code == sf::Keyboard::Enter)
+                    {
+                        if(currentOptionmode == 1)
+                        {
+                            PlayerChose_P = 3;
+                        }
+                        else{
+                            PlayerChose_P = 0;
+                        }
+                        optionSelectedmode = true;
+                    }
+                }
+                
             }
         }
         Optionis.clear();
         Optionis.draw(background_opt);
+        Optionis.draw(textBackground);
+        Optionis.draw(optionText);
+        Optionis.draw(textBackground_mode);
+        Optionis.draw(modeText);
+        Optionis.draw(messege);
+        Optionis.draw(messege_enter);
         Optionis.display();
     }
-    return 0;
+    return currentOption + 1;
 }
 
 // Об Игре
@@ -87,6 +184,7 @@ int About_Game_Durak(sf::RenderWindow& About)
     return 0;
 }
 
+int number_of_players_people = 1;
 int Menu_Durak(sf::RenderWindow& window) 
 {
     window.setMouseCursorVisible(false); //отключаем видимость курсора
@@ -148,7 +246,6 @@ int Menu_Durak(sf::RenderWindow& window)
 
     // idleAnimation.AddFrames(Vector2i(0, 0), spriteSize, 5, 4);
 
-
     Clock clock;
     SetLayeredWindowAttributes(window.getSystemHandle(), 100, 0, LWA_COLORKEY);
     bool gameJustEnded = false;
@@ -166,7 +263,7 @@ int Menu_Durak(sf::RenderWindow& window)
                 {
                     if (mymenu.getSelectedMenuNumber() == 0 && !gameJustEnded)
                     {
-                        main_durakgame(window);gameJustEnded = true;
+                        main_durakgame(window, number_of_players_people, PlayerChose_P);gameJustEnded = true;
                     }
                     else
                     {
@@ -179,7 +276,7 @@ int Menu_Durak(sf::RenderWindow& window)
                         switch (mymenu.getSelectedMenuNumber())
                         {
                             // case 0:main_durakgame(window);  break;
-                            case 1:Options_Durak(window);     break;
+                            case 1:number_of_players_people = Options_Durak(window);     break;
                             case 2:About_Game_Durak(window);  break;
                             case 3:return 0; break;
                         }

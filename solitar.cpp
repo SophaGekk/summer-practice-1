@@ -1,33 +1,64 @@
 #include <SFML/Graphics.hpp> 
 #include <vector>
 #include <set>
+#include <string>
 #include <iostream> //For output to the terminal
-#include <sstream> //For input through arguments
 #include "solitar.h"
-
+#include <chrono>
 #include <fstream> // For file operations
 #include <sstream> // For string manipulation
+std::chrono::steady_clock::time_point start_time; // Время начала игры
 // Свойства колоды
 const bool _allow_drop = true, _disallow_drop = false;
 const bool _stack = true, _pile = false;
 const uint8_t _type_stock = 0, _type_draw = 1, _type_fountain = 2, _type_pile = 3, _type_drag = 5;
 
+/// @brief Оператор сравнения равенства для карт.
+/// @param l Левая карта.
+/// @param r Правая карта.
+/// @return true, если номера карт равны, иначе false.
 bool operator==(const Card& l, const Card& r) { return (l.num == r.num); }
+
+/// @brief Оператор сравнения неравенства для карт.
+/// @param l Левая карта.
+/// @param r Правая карта.
+/// @return true, если номера карт не равны, иначе false.
 bool operator!=(const Card& l, const Card& r) { return (l.num != r.num); }
+
+/// @brief Оператор вычитания для sf::Vector2f и sf::Vector2i.
+/// @param l Вектор sf::Vector2f.
+/// @param r Вектор sf::Vector2i.
+/// @return Новый вектор sf::Vector2f, полученный путем вычитания 
+///     компонент r из компонент l.
 sf::Vector2f operator-(const sf::Vector2f& l, sf::Vector2i& r) { return sf::Vector2f(l.x - r.x, l.y - r.y); }
+
+/// @brief Оператор сложения для sf::Vector2i и sf::Vector2f.
+/// @param l Вектор sf::Vector2i.
+/// @param r Вектор sf::Vector2f.
+/// @return Новый вектор sf::Vector2f, полученный путем сложения 
+///     компонент l и r.
 sf::Vector2f operator+(const sf::Vector2i& l, sf::Vector2f& r) { return sf::Vector2f(l.x + r.x, l.y + r.y); }
 
-
+/// @brief Конструктор класса Deck.
+/// @param pos_ Позиция колоды.
+/// @param is_stack_ Флаг, указывающий, является ли колода стеком.
+/// @param allow_drop_ Флаг, указывающий, разрешено ли сбрасывать 
+///          карты на эту колоду.
+/// @param type_ Тип колоды.
 Deck::Deck (sf::Vector2f pos_, bool is_stack_, bool allow_drop_, uint8_t type_)
 {
-    pos = pos_;
-    is_stack = is_stack_;
-    allow_drop = allow_drop_;
-    type = type_;
+  pos = pos_;
+  is_stack = is_stack_;
+  allow_drop = allow_drop_;
+  type = type_;
 }
-
-// Перегрузка оператора << для Deck
+/// @brief Перегрузка оператора << для вывода информации о колоде в поток.
+/// @param out Поток вывода.
+/// @param deck Колода, которую нужно вывести.
+/// @return Поток вывода с добавленной информацией о колоде в формате:
+///         "количество_карт номер_карты facedown ...".
 std::ofstream& operator<<(std::ofstream& out, const Deck& deck) {
+    out << static_cast<int>(deck.type) << " ";
     out << deck.cards.size() << " ";
     for (const auto& card : deck.cards) {
         out << static_cast<int>(card.num) << " " 
@@ -36,8 +67,16 @@ std::ofstream& operator<<(std::ofstream& out, const Deck& deck) {
     return out;
 }
 
-// Перегрузка оператора >> для Deck
+/// @brief Перегрузка оператора >> для Deck
+/// @param in Поток ввода
+/// @param deck Колода, которую нужно вывести.
+/// @return Поток вывода с добавленной информацией о колоде в формате:
+///         "количество_карт номер_карты facedown ...".
 std::ifstream& operator>>(std::ifstream& in, Deck& deck) {
+    int type;
+    in >> type;
+    deck.type = type;
+
     int numCards;
     in >> numCards;
 
@@ -45,19 +84,32 @@ std::ifstream& operator>>(std::ifstream& in, Deck& deck) {
     for (auto& card : deck.cards) {
         int num;
         bool facedown;
-        in >> num >> facedown;
+        in >> num  >> facedown;
         card.num = num;
         card.facedown = facedown;
     }
     return in;
 }
 
-// Функция для сохранения игры
-void savegame(Deck* deck_drag, Deck* deck_drag_from, Deck* deck_drop_to, 
-               std::vector<Deck*> deck_piles, Deck* deck_stock, 
+/// @brief Функция для сохранения игры
+/// @param game_clock Таймер игры
+/// @param start_time Время начала игры
+/// @param deck_drag Колода, используемая для перетаскивания карт
+/// @param deck_piles Колоды стопок
+/// @param deck_stock Колода запаса
+/// @param deck_fountains Колоды фонтанов
+/// @param all_face_up Флаг, указывающий, все ли карты перевернуты лицом вверх
+/// @param is_stock Флаг, указывающий, используется ли колода запаса
+/// @param cards_in_fountain Количество карт в фонтане
+/// @param pause_adjust Время паузы
+/// @param was_dragging Флаг, указывающий, перетаскивалась ли карта
+/// @param dragging Флаг, указывающий, перетаскивается ли карта
+/// @param deckk Колоды
+/// @param unique_cards_in_fountain Уникальные карты в фонтане
+void savegame(sf::Clock& game_clock,std::chrono::steady_clock::time_point start_time, Deck* deck_drag, std::vector<Deck*> deck_piles, Deck* deck_stock, 
                std::vector<Deck*> deck_fountains, 
                bool& all_face_up, bool& is_stock, uint8_t& cards_in_fountain, 
-               uint32_t& now, bool& was_dragging, bool& dragging) {
+               uint32_t& pause_adjust, bool& was_dragging, bool& dragging, std::vector<Deck*> deckk, std::set<Card> unique_cards_in_fountain) {
     std::ofstream saveFile("resources/solit_save.txt");
     if (!saveFile.is_open()) {
         std::cerr << "Error opening file for saving!" << std::endl;
@@ -66,8 +118,6 @@ void savegame(Deck* deck_drag, Deck* deck_drag_from, Deck* deck_drop_to,
 
     // Сохраняем данные Deck
     saveFile << *deck_drag << " ";
-    saveFile << *deck_drag_from << " ";
-    saveFile << *deck_drop_to << " ";
     for (size_t i = 0; i < deck_piles.size(); i++) {
         saveFile << *deck_piles[i] << " ";
     }
@@ -76,23 +126,52 @@ void savegame(Deck* deck_drag, Deck* deck_drag_from, Deck* deck_drop_to,
         saveFile << *deck_fountains[i] << " ";
     }
 
+    for (size_t i = 0; i < deckk.size(); i++) {
+        saveFile << *deckk[i] << " ";
+    }
+    saveFile << cards_in_fountain << "\n";
+    for (const auto& card : unique_cards_in_fountain) {
+        saveFile << card.num << " " << card.facedown << " " << card.rotation << " "; 
+    }
+    saveFile << "\n"; // Добавить разделитель (например, символ новой строки)
+
     // Сохраняем другие значения
     saveFile << all_face_up << "\n";
     saveFile << is_stock << "\n";
-    saveFile << cards_in_fountain << "\n";
-    saveFile << now << "\n";
+       
+    saveFile << pause_adjust << "\n"; // Сохраняем pause_adjust
+    auto startTime = std::chrono::steady_clock::now(); // Получаем текущее время
+    saveFile << std::chrono::duration_cast<std::chrono::milliseconds>(startTime.time_since_epoch()).count();
+    // auto now = std::chrono::steady_clock::now();
+    // auto elapsed_time = now - start_time;
+    // auto seconds = std::chrono::duration_cast<std::chrono::seconds>(elapsed_time); 
+    // saveFile << seconds.count() << "\n"; 
+
     saveFile << was_dragging << "\n";
     saveFile << dragging << "\n";
 
     saveFile.close();
 }
 
-// Функция для загрузки игры
-void loadgame(Deck* deck_drag, Deck* deck_drag_from, Deck* deck_drop_to, 
-               std::vector<Deck*> deck_piles, Deck* deck_stock, 
+/// @brief Функция для загрузки игры
+/// @param game_clock Таймер игры
+/// @param start_time Время начала игры
+/// @param deck_drag Колода, используемая для перетаскивания карт
+/// @param deck_piles Колоды стопок
+/// @param deck_stock Колода запаса
+/// @param deck_fountains Колоды фонтанов
+/// @param all_face_up Флаг, указывающий, все ли карты перевернуты лицом вверх
+/// @param is_stock Флаг, указывающий, используется ли колода запаса
+/// @param cards_in_fountain Количество карт в фонтане
+/// @param pause_adjust Время паузы
+/// @param was_dragging Флаг, указывающий, перетаскивалась ли карта
+/// @param dragging Флаг, указывающий, перетаскивается ли карта
+/// @param deckk Колоды
+/// @param unique_cards_in_fountain Уникальные карты в фонтане
+void loadgame(sf::Clock& game_clock, std::chrono::steady_clock::time_point start_time, Deck* deck_drag, std::vector<Deck*> deck_piles, Deck* deck_stock, 
                std::vector<Deck*> deck_fountains, 
                bool& all_face_up, bool& is_stock,  uint8_t& cards_in_fountain, 
-               uint32_t& now, bool& was_dragging, bool& dragging) {
+               uint32_t& pause_adjust, bool& was_dragging, bool& dragging, std::vector<Deck*> deckk, std::set<Card> unique_cards_in_fountain) {
     std::ifstream loadFile("resources/solit_save.txt");
     if (!loadFile.is_open()) {
         std::cerr << "Error opening file for loading!" << std::endl;
@@ -101,8 +180,6 @@ void loadgame(Deck* deck_drag, Deck* deck_drag_from, Deck* deck_drop_to,
 
     // Загружаем данные Deck
     loadFile >> *deck_drag;
-    loadFile >> *deck_drag_from;
-    loadFile >> *deck_drop_to;
     for (size_t i = 0; i < deck_piles.size(); i++) {
         loadFile >> *deck_piles[i];
     }
@@ -110,18 +187,67 @@ void loadgame(Deck* deck_drag, Deck* deck_drag_from, Deck* deck_drop_to,
     for (size_t i = 0; i < deck_fountains.size(); i++) {
         loadFile >> *deck_fountains[i];
     }
+    for (size_t i = 0; i < deckk.size(); i++) {
+        loadFile >> *deckk[i];
+    }
+    loadFile >> cards_in_fountain;
+
+    uint8_t num;
+    bool facedown;
+    float rotation;
+    while (loadFile >> num >> facedown >> rotation) {
+        unique_cards_in_fountain.insert(Card{num, facedown, rotation});
+    }
 
     // Загружаем другие значения
     loadFile >> all_face_up;
     loadFile >> is_stock;
-    loadFile >> cards_in_fountain;
-    loadFile >> now;
+    loadFile >> pause_adjust; // Загрузите pause_adjust
+
+    long long milliseconds;
+    loadFile >> milliseconds;
+    // Восстанавливаем время из миллисекунд
+    start_time = std::chrono::steady_clock::time_point(std::chrono::milliseconds(milliseconds));    // loadFile >> savedSeconds; // Загрузите сохраненное время в секундах
+    // // Обновите start_time, чтобы учесть сохраненное время
+    // start_time = std::chrono::steady_clock::now() + std::chrono::seconds(savedSeconds);
+
     loadFile >> was_dragging;
     loadFile >> dragging;
 
     loadFile.close();
 }
-void pollInput (sf::RenderWindow& window, bool& mouse_down, bool& dragging, bool& showMessageEsc, bool& returnToMenu,int& selectedButtonIndex, int& selectedButtonIndex_2, bool& end_game, bool&YouWin, bool& showSaveLoadMenu, sf::Text saveText, sf::Text loadText, int& selectedSaveButtonIndex, int& selectedsaveyesnobuttonindex, sf::Text buttonNoo, sf::Text buttonYess, Deck* deck_drag, Deck* deck_drag_from, Deck* deck_drop_to, std::vector<Deck*> deck_piles, Deck* deck_stock, std::vector<Deck*> deck_fountains, bool& all_face_up, bool& is_stock, uint8_t& cards_in_fountain, uint32_t& now, bool& was_dragging)
+    bool select = false;
+/// @brief Обрабатывает ввод пользователя.
+/// @param game_clock Таймер игры.
+/// @param start_time Время начала игры.
+/// @param window Окно игры.
+/// @param mouse_down Флаг, указывающий, нажата ли кнопка мыши.
+/// @param dragging Флаг, указывающий, перетаскивается ли карта.
+/// @param showMessageEsc Флаг, указывающий, нужно ли отображать сообщение об Esc.
+/// @param returnToMenu Флаг, указывающий, нужно ли вернуться в меню.
+/// @param selectedButtonIndex Индекс выбранной кнопки в меню.
+/// @param selectedButtonIndex_2 Индекс выбранной кнопки в меню.
+/// @param end_game Флаг, указывающий, закончилась ли игра.
+/// @param YouWin Флаг, указывающий, выиграл ли игрок.
+/// @param showSaveLoadMenu Флаг, указывающий, нужно ли отображать меню сохранения/загрузки.
+/// @param saveText Текст кнопки "Сохранить".
+/// @param loadText Текст кнопки "Загрузить".
+/// @param selectedSaveButtonIndex Индекс выбранной кнопки в меню сохранения/загрузки.
+/// @param selectedsaveyesnobuttonindex Индекс выбранной кнопки в меню подтверждения сохранения.
+/// @param buttonNoo Текст кнопки "Нет" в меню подтверждения сохранения.
+/// @param buttonYess Текст кнопки "Да" в меню подтверждения сохранения.
+/// @param deck_drag Колода, используемая для перетаскивания карт.
+/// @param deck_piles Колоды стопок.
+/// @param deck_stock Колода запаса.
+/// @param deck_fountains Колоды фонтанов.
+/// @param all_face_up Флаг, указывающий, все ли карты перевернуты лицом вверх.
+/// @param is_stock Флаг, указывающий, используется ли колода запаса.
+/// @param cards_in_fountain Количество карт в фонтане.
+/// @param pause_adjust Время паузы.
+/// @param was_dragging Флаг, указывающий, перетаскивалась ли карта.
+/// @param deckk Колоды.
+/// @param unique_cards_in_fountain Уникальные карты в фонтане.
+void pollInput (sf::Clock& game_clock, std::chrono::steady_clock::time_point start_time, sf::RenderWindow& window, bool& mouse_down, bool& dragging, bool& showMessageEsc, bool& returnToMenu,int& selectedButtonIndex, int& selectedButtonIndex_2, bool& end_game, bool&YouWin, bool& showSaveLoadMenu, sf::Text saveText, sf::Text loadText, int& selectedSaveButtonIndex, int& selectedsaveyesnobuttonindex, sf::Text buttonNoo, sf::Text buttonYess, Deck* deck_drag, std::vector<Deck*> deck_piles, Deck* deck_stock, std::vector<Deck*> deck_fountains, bool& all_face_up, bool& is_stock, uint8_t& cards_in_fountain, uint32_t& pause_adjust, bool& was_dragging, std::vector<Deck*> deckk, std::set<Card> unique_cards_in_fountain)
 {
     sf::Event event;
     while (window.pollEvent(event)) {
@@ -170,6 +296,7 @@ void pollInput (sf::RenderWindow& window, bool& mouse_down, bool& dragging, bool
         // Обработка нажатия на кнопку "Save Game"
         if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::S) {
             showSaveLoadMenu = true;
+            select = true;
             saveText.setFillColor(sf::Color::Red);
             loadText.setFillColor(sf::Color::White);
             selectedSaveButtonIndex = 0; // Выбираем "Save Game" по умолчанию
@@ -177,6 +304,7 @@ void pollInput (sf::RenderWindow& window, bool& mouse_down, bool& dragging, bool
         }
         // Обработка нажатия на кнопку "Load Game"
         if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::L) {
+            select = false;
             showSaveLoadMenu = true;
             loadText.setFillColor(sf::Color::Red);
             saveText.setFillColor(sf::Color::White);
@@ -189,16 +317,14 @@ void pollInput (sf::RenderWindow& window, bool& mouse_down, bool& dragging, bool
             if (selectedSaveButtonIndex == 0)
             {
                 if (event.key.code == sf::Keyboard::Left) {
-                    // selectedsaveyesnobuttonindex = (selectedsaveyesnobuttonindex - 1 + 2) % 2;
                     selectedsaveyesnobuttonindex = 0;
                         
                 } else if (event.key.code == sf::Keyboard::Right) {
-                    // selectedsaveyesnobuttonindex = (selectedsaveyesnobuttonindex + 1) % 2;
                     selectedsaveyesnobuttonindex = 1;
                     
                 } else if (event.key.code == sf::Keyboard::Enter) {
                     if (selectedsaveyesnobuttonindex == 0) {
-                        savegame(deck_drag, deck_drag_from, deck_drop_to, deck_piles,  deck_stock, deck_fountains, all_face_up, is_stock, cards_in_fountain, now, was_dragging, dragging);
+                        savegame(game_clock, start_time, deck_drag, deck_piles,  deck_stock, deck_fountains, all_face_up, is_stock, cards_in_fountain, pause_adjust, was_dragging, dragging, deckk,unique_cards_in_fountain);
                         showSaveLoadMenu = false;
                         break;
                     } else {
@@ -222,7 +348,7 @@ void pollInput (sf::RenderWindow& window, bool& mouse_down, bool& dragging, bool
                         
                     } else if (event.key.code == sf::Keyboard::Enter) {
                         if (selectedsaveyesnobuttonindex == 0) {
-                            loadgame(deck_drag, deck_drag_from, deck_drop_to, deck_piles,  deck_stock, deck_fountains, all_face_up, is_stock, cards_in_fountain, now, was_dragging, dragging);
+                            loadgame(game_clock, start_time, deck_drag, deck_piles,  deck_stock, deck_fountains, all_face_up, is_stock, cards_in_fountain, pause_adjust, was_dragging, dragging, deckk,unique_cards_in_fountain);
                             showSaveLoadMenu = false;
                             break;
                         } else {
@@ -315,11 +441,11 @@ int main_solitare (sf::RenderWindow& window)
     // Текст для элементов меню
     sf::Text saveText("Save Game", fonts, 24);
     saveText.setFillColor(sf::Color::White);
-    saveText.setPosition(800.f, 450.f);
+    saveText.setPosition(800.f, 650.f);
 
     sf::Text loadText("Load Game", fonts, 24);
     loadText.setFillColor(sf::Color::White);
-    loadText.setPosition(1020.f, 450.f);
+    loadText.setPosition(1020.f, 650.f);
 
     sf::ContextSettings settings;
     settings.antialiasingLevel = 8;
@@ -524,7 +650,7 @@ int main_solitare (sf::RenderWindow& window)
     
     
       
-    
+     start_time = std::chrono::steady_clock::now(); // Запускаем таймер
 //Begin game-loop
     while (window.isOpen()) {
         if(returnToMenu)
@@ -537,7 +663,7 @@ int main_solitare (sf::RenderWindow& window)
         
       //Poll input
         bool was_dragging = dragging;
-        pollInput(window, mouse_down, dragging, showMessageEsc, returnToMenu, selectedButtonIndex, selectedButtonIndex_2, end_game, YouWin, showSaveLoadMenu,saveText, loadText, selectedSaveButtonIndex, selectedsaveyesnobuttonindex, buttonNoo, buttonYess,deck_drag, deck_drag_from, deck_drop_to, deck_piles,  deck_stock, deck_fountains, all_face_up, is_stock, cards_in_fountain, now, was_dragging);      
+        pollInput(game_clock, start_time, window, mouse_down, dragging, showMessageEsc, returnToMenu, selectedButtonIndex, selectedButtonIndex_2, end_game, YouWin, showSaveLoadMenu,saveText, loadText, selectedSaveButtonIndex, selectedsaveyesnobuttonindex, buttonNoo, buttonYess,deck_drag, deck_piles,  deck_stock, deck_fountains, all_face_up, is_stock, cards_in_fountain, pause_adjust, was_dragging, deckk,unique_cards_in_fountain);      
         
       //Check pause status
         if (!window.hasFocus() && !paused) {
@@ -726,13 +852,18 @@ int main_solitare (sf::RenderWindow& window)
             }
         }
         
-      //Draw info text
-        uint32_t now = ((int)game_clock.getElapsedTime().asSeconds() - pause_adjust);
+        //Draw info text
+        auto now_t = std::chrono::steady_clock::now();
+        // Преобразуйте elapsed_time в секунды:
+        auto elapsed_time = std::chrono::duration_cast<std::chrono::seconds>(now_t - start_time); 
+        uint32_t now_seconds = (uint32_t)elapsed_time.count();
+
+        uint32_t now = (now_seconds - pause_adjust);
         uint8_t seconds = now % 60;
         uint8_t minutes = now / 60;
         percentage = (int)((float)cards_in_fountain / 52 * 100);
-        std::string time = (minutes < 10 ? "0" : "") + std::to_string(minutes) + ":" + (seconds < 10 ? "0" : "") + std::to_string(seconds);
-
+        std::string time = (static_cast<int>(minutes) < 10 ? "0" : "") + std::to_string(minutes) + ":" + (seconds < 10 ? "0" : "") + std::to_string(seconds);
+        
         // Условие остановки времени
         if (cards_in_fountain >= 52) {
             if (stop_time == "") {
@@ -743,7 +874,7 @@ int main_solitare (sf::RenderWindow& window)
             previous_text = time + "  " + std::to_string(percentage) + "%";
         }
 
-        spr_text.setString(previous_text);
+        spr_text.setString(std::to_string(percentage) + "%");
         window.draw(spr_text);
 
       //Draw cursor
@@ -798,16 +929,16 @@ int main_solitare (sf::RenderWindow& window)
         // Рисование сообщения о нажатие Escape, если флаг установлен 
         float textX_message_escape = game_W / 2.f - message_escape.getLocalBounds().width / 2.f;
         float textY_message_escape = (800 + 400) / 2.f - message_escape.getLocalBounds().height / 2.f;
-        message_escape.setPosition(textX_message_escape, textY_message_escape);
+        message_escape.setPosition(textX_message_escape, textY_message_escape+ 100);
         
         float buttonWidth = buttonYess.getLocalBounds().width;
         float buttonHeight = buttonYess.getLocalBounds().height;
 
         float buttonX = game_W / 2.f - buttonWidth / 2.f; 
         float buttonY = (800 + 400) / 2.f - buttonHeight / 2.f + 50;
-        buttonYess.setPosition(buttonX, buttonY);
+        buttonYess.setPosition(buttonX - 50, buttonY+ 200);
 
-        buttonNoo.setPosition(buttonX + buttonWidth + 50, buttonY);
+        buttonNoo.setPosition(buttonX + buttonWidth + 50, buttonY+200);
         if (showMessageEsc)
         {
             window.draw(message_escape);
@@ -829,9 +960,31 @@ int main_solitare (sf::RenderWindow& window)
         }
         // Отрисовка меню сохранения/загрузки
         if (showSaveLoadMenu) {
+            if (selectedsaveyesnobuttonindex == 0)
+            {
+                buttonYess.setFillColor(sf::Color::Red);
+                buttonNoo.setFillColor(sf::Color::White);
+            }
+            else
+            {
+                buttonYess.setFillColor(sf::Color::White);
+                buttonNoo.setFillColor(sf::Color::Red);
+            }
+            if(select)
+            {
+                loadText.setFillColor(sf::Color::White);
+                saveText.setFillColor(sf::Color::Red);
+            }
+            else
+            {
+                loadText.setFillColor(sf::Color::Red);
+                saveText.setFillColor(sf::Color::White);
+            
+            }
             window.draw(saveText);
             window.draw(loadText);
             window.draw(buttonYess);
+            window.draw(buttonNoo);
         }  
         if (end_game) {
             // Определяем, какое изображение использовать

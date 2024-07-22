@@ -12,7 +12,15 @@
 using namespace sf;
 #include "pikdam.h"
 #include <memory>
-
+/// @brief Функция для отрисовки игры 1 vs 3 (1 - человек, 3 - бота)
+/// @param Player вектор игроков
+/// @param selectedCardiIndex текущая выбранная карта
+/// @param selected_Cardi вектор выбранных карт
+/// @param selectedCardiIndexRight текущая выбранная карта у соседа
+/// @param neighborIndex индекс игрока - соседа
+/// @param windowss игровое окно
+/// @param messege_winplayer текст на месте карт победителя
+/// @param back_Cardi_sprite оборот карты (рубашка)
 void draw_for1(std::vector<std::unique_ptr<Player_>>& Player, int& selectedCardiIndex, std::vector<int>& selected_Cardi, int& selectedCardiIndexRight, int& neighborIndex, sf::RenderWindow& windowss, sf::Text& messege_winplayer, RectangleShape& back_Cardi_sprite)
 {
 
@@ -100,7 +108,15 @@ void draw_for1(std::vector<std::unique_ptr<Player_>>& Player, int& selectedCardi
         }
     }
 }
-
+/// @brief Функция для отрисовки игры 2 vs 2 (2 - человека, 2 - бота)
+/// @param Player вектор игроков
+/// @param selectedCardiIndex текущая выбранная карта
+/// @param selected_Cardi вектор выбранных карт
+/// @param selectedCardiIndexRight текущая выбранная карта у соседа
+/// @param neighborIndex индекс игрока - соседа
+/// @param windowss игровое окно
+/// @param messege_winplayer текст на месте карт победителя
+/// @param back_Cardi_sprite оборот карты (рубашка)
 void draw_for2(std::vector<std::unique_ptr<Player_>>& Player, int& selectedCardiIndex, std::vector<int>& selected_Cardi, int& selectedCardiIndexRight, int& neighborIndex, sf::RenderWindow& windowss, sf::Text& messege_winplayer, RectangleShape& back_Cardi_sprite)
 {
     if ((dynamic_cast<HumanPlayer*>(Player[0].get()) != nullptr && Player[0]->isAttacker && (!Player[0]->hasWon)))
@@ -442,6 +458,15 @@ void draw_for2(std::vector<std::unique_ptr<Player_>>& Player, int& selectedCardi
         }
     }
 } 
+/// @brief Функция для отрисовки игры 3 vs 1 (3 - человека, 1 - бот)
+/// @param Player вектор игроков
+/// @param selectedCardiIndex текущая выбранная карта
+/// @param selected_Cardi вектор выбранных карт
+/// @param selectedCardiIndexRight текущая выбранная карта у соседа
+/// @param neighborIndex индекс игрока - соседа
+/// @param windowss игровое окно
+/// @param messege_winplayer текст на месте карт победителя
+/// @param back_Cardi_sprite оборот карты (рубашка)
 void draw_for3(std::vector<std::unique_ptr<Player_>>& Player, int& selectedCardiIndex, std::vector<int>& selected_Cardi, int& selectedCardiIndexRight, int& neighborIndex, sf::RenderWindow& windowss, sf::Text& messege_winplayer, RectangleShape& back_Cardi_sprite)
 {
     if ((dynamic_cast<HumanPlayer*>(Player[0].get()) != nullptr && Player[0]->isAttacker && (!Player[0]->hasWon)))
@@ -956,6 +981,15 @@ void draw_for3(std::vector<std::unique_ptr<Player_>>& Player, int& selectedCardi
         }
     }
 } 
+/// @brief Функция для отрисовки игры 4 vs 0 (4 - человека, 0 - ботов)
+/// @param Player вектор игроков
+/// @param selectedCardiIndex текущая выбранная карта
+/// @param selected_Cardi вектор выбранных карт
+/// @param selectedCardiIndexRight текущая выбранная карта у соседа
+/// @param neighborIndex индекс игрока - соседа
+/// @param windowss игровое окно
+/// @param messege_winplayer текст на месте карт победителя
+/// @param back_Cardi_sprite оборот карты (рубашка)
 void draw_for4(std::vector<std::unique_ptr<Player_>>& Player, int& selectedCardiIndex, std::vector<int>& selected_Cardi, int& selectedCardiIndexRight, int& neighborIndex, sf::RenderWindow& windowss, sf::Text& messege_winplayer, RectangleShape& back_Cardi_sprite)
 {
     if ((dynamic_cast<HumanPlayer*>(Player[0].get()) != nullptr && Player[0]->isAttacker)&& (!Player[0]->hasWon))

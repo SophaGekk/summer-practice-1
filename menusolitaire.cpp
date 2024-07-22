@@ -3,10 +3,17 @@
 #include <SFML/Graphics.hpp> 
 #include <SFML/Audio.hpp> 
 #include "Animator.h"
-
 #include "solitar.h"
-
 using namespace sf;
+/// @brief Инициализирует текст с заданными параметрами.
+/// @param mtext Объект текста, который нужно инициализировать.
+/// @param xpos Позиция текста по оси X.
+/// @param ypos Позиция текста по оси Y.
+/// @param str Текст, который нужно отобразить.
+/// @param size_font Размер шрифта.
+/// @param menu_text_color Цвет текста.
+/// @param bord Толщина границы.
+/// @param border_color Цвет границы.
 void Init_Textix(Text& mtext, float xpos, float ypos, String str, int size_font=60,Color menu_text_color=Color::White, int bord=0, Color border_color = Color::Black )
 {
     mtext.setCharacterSize(size_font);
@@ -17,8 +24,8 @@ void Init_Textix(Text& mtext, float xpos, float ypos, String str, int size_font=
     mtext.setOutlineColor(border_color);
 
 }
-
-// Об Игре
+/// @brief Об Игре
+/// @param About игровое окно
 int About_Game_solitaire(sf::RenderWindow& About)
 {
     RectangleShape background_ab(Vector2f(VideoMode::getDesktopMode().width, VideoMode::getDesktopMode().height));

@@ -8,6 +8,8 @@
 #include "Hearts.h"
 
 using namespace sf;
+
+
 void Init_Text_H(Text& mtext, float xpos, float ypos, String str, int size_font, Color menu_text_color, int bord, Color border_color) {
     mtext.setCharacterSize(size_font);
     mtext.setString(str);
@@ -26,56 +28,86 @@ void Init_Text_H(Text& mtext, float xpos, float ypos, String str, int size_font,
 
 }
 
-int Game_Start_Hearts(sf::RenderWindow& Play)
-{
-    RectangleShape background_play(Vector2f(1920, 1080));
-    Play.setMouseCursorVisible(true); //включаем видимость курсора
-    Texture texture_play;
-    if (!texture_play.loadFromFile("resources/table.png")) exit(1);
-    background_play.setTexture(&texture_play);
-
-    while (Play.isOpen())
-    {
-        Event event_play;
-        while (Play.pollEvent(event_play))
-        {
-            if (event_play.type == Event::KeyPressed)
-            {
-                main_hearts(Play);
-                if (event_play.key.code == Keyboard::Escape) { return 0; }
-            }
-        }
-        Play.clear();
-        Play.draw(background_play);
-        Play.display();
-    }
-    return 0;
-}
-
 //Настройки
 int Options_Hearts(sf::RenderWindow& Optionis)
 {
-    RectangleShape background_opt(Vector2f(1920, 1080));
-    Texture texture_opt;
+    sf::RectangleShape background_opt(sf::Vector2f(1920, 1080));
+    sf::Texture texture_opt;
     if (!texture_opt.loadFromFile("resources/table.png")) exit(2);
-
     background_opt.setTexture(&texture_opt);
+
+    std::vector<std::wstring> playerOptions = {L"1 игрок", L"2 игрока", L"3 игрока"};
+    int currentOption = 0;
+    bool optionSelected = false;
+
+    sf::Font font;
+    if (!font.loadFromFile("resources/arial.ttf")) exit(3);
+    sf::Text optionText;
+    optionText.setFont(font);
+    optionText.setCharacterSize(50);
+    optionText.setFillColor(sf::Color::White);
+    optionText.setPosition(860, 550);
+    optionText.setString(playerOptions[currentOption]);
+
+    sf::RectangleShape textBackground(sf::Vector2f(400, 100));
+    textBackground.setFillColor(sf::Color(0, 0, 0, 150)); // Полупрозрачный черный фон
+    textBackground.setPosition(750, 540);
+    sf::Text messege;
+    messege.setFont(font);
+    messege.setCharacterSize(60);
+    messege.setFillColor(sf::Color::White);
+    messege.setPosition(100.f, 100.f);
+
+    // Текст вопроса
+    messege.setString(L"Выберите количество игроков - людей: ");
+    messege.setPosition(450, 350);
+
+    sf::Text messege_enter;
+    messege_enter.setFont(font);
+    messege_enter.setCharacterSize(40);
+    messege_enter.setFillColor(sf::Color::White);
+    messege_enter.setPosition(100.f, 100.f);
+
+    // Текст вопроса
+    messege_enter.setString(L"Нажмите Enter чтобы подтвердить выбор и Escape чтобы выйти");
+    messege_enter.setPosition(380, 450);
     while (Optionis.isOpen())
     {
-        Event event_opt;
+        sf::Event event_opt;
         while (Optionis.pollEvent(event_opt))
         {
-            if (event_opt.type == Event::Closed) return 0;
-            if (event_opt.type == Event::KeyPressed)
+            if (event_opt.type == sf::Event::Closed) return 0;
+            if (event_opt.type == sf::Event::KeyPressed)
             {
-                if (event_opt.key.code == Keyboard::Escape) return 0;
+                if (event_opt.key.code == sf::Keyboard::Escape) return currentOption + 1;
+                if (!optionSelected)
+                {
+                    if (event_opt.key.code == sf::Keyboard::Right)
+                    {
+                        currentOption = (currentOption + 1) % playerOptions.size();
+                        optionText.setString(playerOptions[currentOption]);
+                    }
+                    if (event_opt.key.code == sf::Keyboard::Left)
+                    {
+                        currentOption = (currentOption - 1 + playerOptions.size()) % playerOptions.size();
+                        optionText.setString(playerOptions[currentOption]);
+                    }
+                    if (event_opt.key.code == sf::Keyboard::Enter)
+                    {
+                        optionSelected = true;
+                    }
+                }
             }
         }
         Optionis.clear();
         Optionis.draw(background_opt);
+        Optionis.draw(textBackground);
+        Optionis.draw(optionText);
+        Optionis.draw(messege);
+        Optionis.draw(messege_enter);
         Optionis.display();
     }
-    return 0;
+    return currentOption + 1;
 }
 
 // Об Игре
@@ -85,7 +117,7 @@ int About_Game_Hearts(sf::RenderWindow& About)
 
     RectangleShape background_ab(Vector2f(VideoMode::getDesktopMode().width, VideoMode::getDesktopMode().height));
     Texture texture_ab;
-    if (!texture_ab.loadFromFile("resources/rules_pik_dam.png")) exit(3);
+    if (!texture_ab.loadFromFile("resources/rules_hearts.png")) exit(3);
     background_ab.setTexture(&texture_ab);
 
     // Шрифт для названия экрана
@@ -115,6 +147,7 @@ int About_Game_Hearts(sf::RenderWindow& About)
     return 0;
 }
 
+int number_of_playeriks = 1;
 int Menu_Hearts(sf::RenderWindow& windows) 
 {
     windows.setMouseCursorVisible(false); //отключаем видимость курсора
@@ -200,13 +233,13 @@ int Menu_Hearts(sf::RenderWindow& windows)
             if (event.type == Event::KeyReleased)
             {
                 // События выбра пунктов меню
-                if (event.key.code == Keyboard::Up) {mymenu.MoveUp(); }       // вверх
-                if (event.key.code == Keyboard::Down) {mymenu.MoveDown(); }  // вниз
+                if (event.key.code == Keyboard::Up) {sound.play(); mymenu.MoveUp(); }       // вверх
+                if (event.key.code == Keyboard::Down) {sound.play(); mymenu.MoveDown();}  // вниз
                 if (event.key.code == Keyboard::Return)                                     // выбор
                 {
                     if (mymenu.getSelectedMenuNumber() == 0 && !gameJustEnded)
                     {
-                        main_hearts(windows);gameJustEnded = true;
+                        main_hearts(windows, number_of_playeriks);gameJustEnded = true;
                     }
                     else
                     {
@@ -219,7 +252,7 @@ int Menu_Hearts(sf::RenderWindow& windows)
                         switch (mymenu.getSelectedMenuNumber())
                         {
                             // case 0:Game_Start_Hearts(windows);  break;
-                            case 1:Options_Hearts(windows);     break;
+                            case 1:number_of_playeriks = Options_Hearts(windows);     break;
                             case 2:About_Game_Hearts(windows);  break;
                             case 3:return 0; break;
                         }

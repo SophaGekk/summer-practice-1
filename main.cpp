@@ -30,6 +30,39 @@ void InitTexts(Text& mtext, float xpos, float ypos, String str, int size_font=60
 
 }
 
+// Об Игре
+int About_Game(sf::RenderWindow& About)
+{
+    RectangleShape background_ab(Vector2f(VideoMode::getDesktopMode().width, VideoMode::getDesktopMode().height));
+    Texture texture_ab;
+    if (!texture_ab.loadFromFile("resources/management.png")) exit(3);
+    background_ab.setTexture(&texture_ab);
+
+    // Шрифт для названия экрана
+    Font font;
+    if (!font.loadFromFile("resources/troika.otf")) exit(6);
+    // Текст с названием экрана
+    Text Titul;
+    Titul.setFont(font);
+    Init_Text_D(Titul, 500, 50, L"Управление в играх", 120, Color(237, 147, 0), 3);
+
+    while (About.isOpen())
+    {
+        Event event_play;
+        while (About.pollEvent(event_play))
+        {
+            if (event_play.type == Event::Closed) return 0;
+            if (event_play.type == Event::KeyPressed)
+            {
+                if (event_play.key.code == Keyboard::Escape) return 0;
+            }
+        }
+        About.clear();
+        About.draw(background_ab);
+        About.display();
+    }
+    return 0;
+}
 int main() 
 {
     // Инициализация окна SFML
@@ -76,10 +109,10 @@ int main()
     musicF.play();
 
     //Название пунктов меню
-    std::vector<String> name_menu{L"Пиковая Дама",L"Дурак",L"Пасьянс",L"Черви", L"Выход"};
+    std::vector<String> name_menu{L"Пиковая Дама",L"Дурак",L"Пасьянс",L"Черви", L"Управление", L"Выход"};
 
     //Объект меню
-    game::GameMenu mymenu(window, 950, 350, 100, 120, name_menu);
+    game::GameMenu mymenu(window, 950, 325, 100, 120, name_menu);
     // Установка цвета отображения меню
     mymenu.setColorTextMenu(Color(237, 147, 0), Color::Red, Color::Black);
     mymenu.AlignMenu(2);
@@ -113,12 +146,6 @@ int main()
     Sprite sprite;
     sprite.setPosition(440, 780);
     Animator animator(sprite);
-
-    // auto& idleAnimation = animator.CreateAnimation("Idle", "resources/f.png", seconds(1), true);
-
-    // idleAnimation.AddFrames(Vector2i(0, 0), spriteSize, 5, 4);
-
-
     Clock clock;
     SetLayeredWindowAttributes(window.getSystemHandle(), 100, 0, LWA_COLORKEY);
 
@@ -143,7 +170,8 @@ int main()
                             case 1:Menu_Durak(window);     break; //дурак
                             case 2:Menu_solitaire(window);  break; //пасьянс
                             case 3:Menu_Hearts(window);  break; //черви
-                            case 4:window.close(); break; //выход
+                            case 4:About_Game(window);break;//управление
+                            case 5:window.close(); break; //выход
                         }
                     // music.play(); musicF.play();
                 }

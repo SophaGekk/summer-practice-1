@@ -7,6 +7,15 @@
 #include "pikdam.h"
 
 using namespace sf;
+/// @brief Инициализирует текст с заданными параметрами.
+/// @param mtext Объект текста, который нужно инициализировать.
+/// @param xpos Позиция текста по оси X.
+/// @param ypos Позиция текста по оси Y.
+/// @param str Текст, который нужно отобразить.
+/// @param size_font Размер шрифта.
+/// @param menu_text_color Цвет текста.
+/// @param bord Толщина границы.
+/// @param border_color Цвет границы.
 void Init_Text(Text& mtext, float xpos, float ypos, String str, int size_font=60,Color menu_text_color=Color::White, int bord=0, Color border_color = Color::Black )
 {
     mtext.setCharacterSize(size_font);
@@ -18,7 +27,8 @@ void Init_Text(Text& mtext, float xpos, float ypos, String str, int size_font=60
 
 }
 
-//Настройки
+/// @brief Настройки игры
+/// @param Optionis игровое окно
 int Optionis(sf::RenderWindow& Optionis)
 {
     sf::RectangleShape background_opt(sf::Vector2f(1920, 1080));
@@ -100,7 +110,8 @@ int Optionis(sf::RenderWindow& Optionis)
     return currentOption + 1;
 }
 
-// Об Игре
+/// @brief Об Игре
+/// @param About игровое окно
 int About_Game_Pik(sf::RenderWindow& About)
 {
     // RenderWindow About(VideoMode::getDesktopMode(), L"Правила игры", Style::Fullscreen);
